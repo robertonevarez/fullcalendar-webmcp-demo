@@ -1,0 +1,78 @@
+---
+title: System Architecture
+description: End-to-end architectural layers from browser WebMCP to PostgreSQL persistence.
+---
+
+# System Architecture
+
+Protocol Tooling decouples browser capability discovery from backend scheduling execution.
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                      Personal AI Agent                      │
+│             (ChatGPT Browser, Claude Code, etc.)            │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ WebMCP Tool Calls
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Business Webpage / Browser                  │
+│       - Registers 8 tools via document.modelContext         │
+│       - Lifecycle & AbortSignal management                  │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTPS POST (JSON)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│             Protocol Tooling Core HTTP API                  │
+│           (api.protocoltooling.com/api/...)                 │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       BookingService                        │
+│   - Application orchestration & transaction management      │
+│   - Idempotency hashing & duplicate request resolution      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Domain Scheduler                       │
+│   - Working hours & timezone normalization                  │
+│   - Service area postal code filtering                      │
+│   - Multi-resource matrix matching (human + physical)       │
+│   - Cryptographic slot ID generation                        │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ SQL Queries & Locks
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     PostgreSQL Database                     │
+│   - Tables: businesses, services, resources, appointments   │
+│   - ACID transactions, conflict detection                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Architectural Boundaries
+
+### 1. WebMCP Capability Surface
+WebMCP operates purely in the client's browser context. It does not contain scheduling business logic, database credentials, or resource availability state. It is a lightweight transport adapter that wraps HTTP requests to the backend.
+
+### 2. HTTP Transport (REST API)
+A stateless REST API layer hosted under `https://api.protocoltooling.com`. Endpoints receive standard JSON payloads with optional `Idempotency-Key` headers, handle route parameters, and delegate execution to `BookingService`.
+
+### 3. Application Layer (`BookingService`)
+The coordinator for domain operations:
+* Validates inputs against schema definitions.
+* Checks idempotency caches to return cached responses on retries.
+* Executes operations inside PostgreSQL database transactions (`runInTransaction`).
+* Maps domain errors to structured `{ ok: false, error: { code, message, retryable } }` responses.
+
+### 4. Domain Scheduler (`scheduler.ts`)
+The pure scheduling engine:
+* Computes time intervals across timezone boundaries (`America/Chicago`, `America/New_York`, etc.).
+* Evaluates service-area zone mappings.
+* Finds valid resource combinations (e.g. 1 stylist + 1 treatment room).
+* Generates tamper-resistant `slot_id` tokens.
+
+### 5. Persistence Layer (`repository.ts` / PostgreSQL)
+Relational data storage with JSONB fields for flexible resource capabilities, business hours, and addresses.

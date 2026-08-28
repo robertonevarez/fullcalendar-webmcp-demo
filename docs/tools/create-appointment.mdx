@@ -1,0 +1,138 @@
+---
+title: create_appointment
+description: Specification and usage for the create_appointment WebMCP tool.
+---
+
+# create_appointment
+
+### Purpose
+Authoritatively creates a confirmed appointment using a selected availability `slot_id`.
+
+---
+
+### When to Call
+:::important
+**Human confirmation required.** Call this tool only after presenting the slot time, address, and pricing to the user and receiving explicit consent.
+:::
+
+---
+
+### Tool Declaration & Schema
+
+```json
+{
+  "name": "create_appointment",
+  "description": "Book a confirmed appointment using an available slot token.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "service_id": { "type": "string" },
+      "slot_id": { "type": "string", "description": "Token from get_availability" },
+      "customer": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "service_address": {
+            "type": "object",
+            "properties": {
+              "line1": { "type": "string" },
+              "city": { "type": "string" },
+              "region": { "type": "string" },
+              "postal_code": { "type": "string" }
+            },
+            "required": ["line1", "city", "region", "postal_code"]
+          }
+        },
+        "required": ["name"]
+      },
+      "notes": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "location_detail": { "type": "string" }
+        }
+      },
+      "idempotency_key": { "type": "string" }
+    },
+    "required": ["service_id", "slot_id", "customer"],
+    "additionalProperties": false
+  },
+  "annotations": {
+    "readOnlyHint": false
+  }
+}
+```
+
+---
+
+### Example Input & Output
+
+**Tool Call**:
+```json
+{
+  "service_id": "svc_ac_diagnostic",
+  "slot_id": "slot_b2a8f9c1_1788264000_3d98",
+  "customer": {
+    "name": "Pat Lee",
+    "email": "pat@example.com",
+    "phone": "512-555-0101",
+    "service_address": {
+      "line1": "45 Oak St",
+      "city": "Austin",
+      "region": "TX",
+      "postal_code": "78704"
+    }
+  },
+  "notes": {
+    "description": "Upstairs unit not blowing cold air."
+  },
+  "idempotency_key": "pat_ac_booking_20260901"
+}
+```
+
+**Tool Response**:
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "appt_9b7c81df",
+    "business_id": "biz_acme_hvac",
+    "service_id": "svc_ac_diagnostic",
+    "status": "confirmed",
+    "starts_at": "2026-09-01T09:00:00.000Z",
+    "ends_at": "2026-09-01T10:30:00.000Z",
+    "customer": {
+      "name": "Pat Lee",
+      "email": "pat@example.com",
+      "phone": "512-555-0101",
+      "service_address": {
+        "line1": "45 Oak St",
+        "city": "Austin",
+        "region": "TX",
+        "postal_code": "78704"
+      }
+    },
+    "price_cents": 8900,
+    "currency": "USD",
+    "resource_allocations": [
+      {
+        "resource_id": "res_hvac_maria",
+        "resource_type": "hvac_technician"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Expected Domain Errors
+* `SLOT_UNAVAILABLE`: The slot has expired or was booked by another transaction.
+* `RESOURCE_UNAVAILABLE`: A required resource has a conflicting commitment.
+* `OUTSIDE_SERVICE_AREA`: Address postal code is not eligible.
+* `IDEMPOTENCY_CONFLICT`: The key was previously used with a different request payload.
+
+### Underlying REST Endpoint
+`POST /api/businesses/:slug/create-appointment`

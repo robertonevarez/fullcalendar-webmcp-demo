@@ -1,0 +1,52 @@
+---
+title: Build a Field Service Business (HVAC / Plumbing)
+description: Modeling field-service businesses with service-area boundaries and customer address policies.
+---
+
+# Build a Field Service Business (HVAC / Plumbing)
+
+Field service businesses operate by dispatching technicians directly to customer homes or commercial locations.
+
+---
+
+## Key Characteristics
+
+1. **`location_mode: CUSTOMER_LOCATION`**: Appointments happen at the customer's property.
+2. **`service_area_required: true`**: Technicians only service specific zip codes.
+3. **Technician Capabilities**: Diagnosticians, repair technicians, and master plumbers have distinct skill tags.
+
+---
+
+## Modeling Example: Acme HVAC
+
+```json
+{
+  "business": {
+    "slug": "acme-hvac",
+    "name": "Acme Heating & Air",
+    "timezone": "America/Chicago",
+    "location_mode": "CUSTOMER_LOCATION"
+  },
+  "service": {
+    "id": "svc_ac_diagnostic",
+    "name": "AC Diagnostic Visit",
+    "duration_minutes": 90,
+    "price_cents": 8900,
+    "location_policy": "CUSTOMER",
+    "service_area_required": true,
+    "resource_requirements": [
+      {
+        "resource_type": "hvac_technician",
+        "quantity": 1,
+        "capability": "hvac_diagnostic"
+      }
+    ]
+  },
+  "zones": [
+    {
+      "zone_id": "austin-central",
+      "postal_codes": ["78701", "78702", "78704", "78705"]
+    }
+  ]
+}
+```

@@ -1,0 +1,39 @@
+---
+title: Human Confirmation Boundaries
+description: Enforcing user consent boundaries before booking and mutation tool calls.
+---
+
+# Human Confirmation Boundaries
+
+In agent-native scheduling, ensuring the user retains agency over commitments, financial liabilities, and calendar changes is paramount.
+
+---
+
+## The Confirmation Rule
+
+:::important
+An agent should **never** execute `create_appointment`, `reschedule_appointment`, or `cancel_appointment` without presenting exact terms and receiving explicit human confirmation.
+:::
+
+---
+
+## Recommended Agent Flow
+
+```text
+1. Agent queries availability via get_availability.
+2. Agent identifies optimal slot:
+   - Date: Tuesday, September 1, 2026
+   - Time: 9:00 AM – 10:30 AM (America/Chicago)
+   - Price: $89.00 USD
+   - Service: AC Diagnostic Visit
+3. Agent pauses and prompts User:
+   "I found an appointment with Acme Heating & Air on Tuesday, Sept 1 at 9:00 AM for $89. Would you like me to book this for Pat Lee at 45 Oak St?"
+4. User responds: "Yes, please go ahead."
+5. Agent calls create_appointment(slot_id: "...", customer: { ... }).
+```
+
+---
+
+## Cancellation & Rescheduling Confirmation
+
+Similarly, before calling `cancel_appointment` or `reschedule_appointment`, the agent should first call `get_appointment` to display the current booking time and cancellation terms to the user before confirming the mutation.

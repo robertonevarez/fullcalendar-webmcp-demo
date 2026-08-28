@@ -1,0 +1,137 @@
+---
+title: Quickstart
+description: Zero-to-agent scheduling in 5 minutes with WebMCP.
+---
+
+# Quickstart
+
+Integrate Protocol Tooling into a client-side webpage in minutes. When an agentic browser or assistant visits your page, the 8 scheduling tools are automatically registered and discoverable.
+
+---
+
+## 1. Register WebMCP Tools in Your Webpage
+
+Add the following client integration snippet to your website's layout or page component. It attaches the 8 canonical tools to `document.modelContext`:
+
+```ts
+import { registerBusinessToolsWhenReady } from '@protocoltooling/webmcp';
+
+// Wait for browser modelContext injection and register tools
+const controller = new AbortController();
+
+registerBusinessToolsWhenReady({
+  businessSlug: 'acme-hvac',
+  businessName: 'Acme Heating & Air',
+  apiBaseUrl: 'https://api.protocoltooling.com',
+  signal: controller.signal,
+  timeoutMs: 10000,
+}).then((result) => {
+  if (result?.registered.length) {
+    console.log(`Registered ${result.registered.length} WebMCP tools for ${result.businessSlug}`);
+  }
+});
+```
+
+---
+
+## 2. Testing Discovery via Agent or Console
+
+If testing in an agentic runtime (e.g. Chrome with WebMCP or OpenAI Agent Browser), the agent can immediately query the tools:
+
+```json
+{
+  "name": "search_services",
+  "arguments": {
+    "query": "tune-up"
+  }
+}
+```
+
+The browser executes the tool via HTTP POST to `https://api.protocoltooling.com/api/businesses/acme-hvac/search-services` and returns structured JSON:
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "svc_preventive",
+      "name": "Preventive Maintenance",
+      "description": "Seasonal HVAC tune-up and safety checks.",
+      "duration_minutes": 60,
+      "price_cents": 7900,
+      "currency": "USD",
+      "location_policy": "CUSTOMER",
+      "service_area_required": true
+    }
+  ]
+}
+```
+
+---
+
+## 3. Querying Availability
+
+Next, request available time slots for the service:
+
+```json
+{
+  "name": "get_availability",
+  "arguments": {
+    "service_id": "svc_preventive",
+    "start_date": "2026-09-01",
+    "end_date": "2026-09-03",
+    "postal_code": "78704",
+    "time_preference": "morning"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "slot_id": "slot_78704_1788264000",
+      "service_id": "svc_preventive",
+      "starts_at": "2026-09-01T09:00:00.000Z",
+      "ends_at": "2026-09-01T10:00:00.000Z",
+      "price": { "amount": 7900, "currency": "USD" },
+      "resources": [
+        { "resource_id": "res_hvac_maria", "resource_type": "hvac_technician" }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 4. Booking the Appointment
+
+Once the human user confirms the time, the agent executes `create_appointment`:
+
+```json
+{
+  "name": "create_appointment",
+  "arguments": {
+    "service_id": "svc_preventive",
+    "slot_id": "slot_78704_1788264000",
+    "customer": {
+      "name": "Jordan Miller",
+      "email": "jordan@example.com",
+      "phone": "512-555-0199",
+      "service_address": {
+        "line1": "100 Congress Ave",
+        "city": "Austin",
+        "region": "TX",
+        "postal_code": "78704"
+      }
+    },
+    "idempotency_key": "user_req_998124_step1"
+  }
+}
+```
+
+The server commits the booking inside a database transaction, reserves technician `res_hvac_maria`, and returns the confirmed `Appointment` record.

@@ -1,0 +1,86 @@
+---
+title: get_appointment
+description: Specification and usage for the get_appointment WebMCP tool.
+---
+
+# get_appointment
+
+### Purpose
+Retrieves current appointment status, timing, customer details, and assigned resource information by appointment ID.
+
+---
+
+### When to Call
+Call this tool when a customer asks to check their existing booking or before initiating a reschedule or cancellation request.
+
+---
+
+### Tool Declaration & Schema
+
+```json
+{
+  "name": "get_appointment",
+  "description": "Fetch appointment details and status by appointment ID.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "appointment_id": {
+        "type": "string",
+        "description": "The unique appointment ID (e.g. 'appt_9b7c81df')"
+      }
+    },
+    "required": ["appointment_id"],
+    "additionalProperties": false
+  },
+  "annotations": {
+    "readOnlyHint": true
+  }
+}
+```
+
+---
+
+### Example Input & Output
+
+**Tool Call**:
+```json
+{
+  "appointment_id": "appt_9b7c81df"
+}
+```
+
+**Tool Response**:
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "appt_9b7c81df",
+    "business_id": "biz_acme_hvac",
+    "service_id": "svc_ac_diagnostic",
+    "status": "confirmed",
+    "starts_at": "2026-09-01T09:00:00.000Z",
+    "ends_at": "2026-09-01T10:30:00.000Z",
+    "customer": {
+      "name": "Pat Lee",
+      "email": "pat@example.com",
+      "phone": "512-555-0101"
+    },
+    "price_cents": 8900,
+    "currency": "USD",
+    "resource_allocations": [
+      {
+        "resource_id": "res_hvac_maria",
+        "resource_type": "hvac_technician"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Expected Domain Errors
+* `APPOINTMENT_NOT_FOUND`: No appointment with this ID exists for the business.
+
+### Underlying REST Endpoint
+`POST /api/businesses/:slug/appointments/get`

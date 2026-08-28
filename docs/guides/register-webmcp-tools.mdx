@@ -1,0 +1,58 @@
+---
+title: Register WebMCP Tools (Client-Side)
+description: Client-side JavaScript snippet and custom options for WebMCP.
+---
+
+# Register WebMCP Tools (Client-Side)
+
+This guide covers advanced client-side registration options, lifecycle polling, and status diagnostics.
+
+---
+
+## Vanilla JavaScript Snippet
+
+If your website does not use a bundler, you can inline the registration script:
+
+```html
+<script type="module">
+  import { registerBusinessToolsWhenReady } from "https://esm.sh/@protocoltooling/webmcp";
+
+  registerBusinessToolsWhenReady({
+    businessSlug: "acme-hvac",
+    businessName: "Acme Heating & Air",
+    apiBaseUrl: "https://api.protocoltooling.com",
+    timeoutMs: 8000,
+  }).then((result) => {
+    if (result?.registered.length) {
+      console.log("WebMCP Tools Ready:", result.registered);
+    }
+  });
+</script>
+```
+
+---
+
+## React Hook Pattern
+
+```tsx
+import { useEffect, useState } from 'react';
+import { registerBusinessToolsWhenReady, type RegistrationResult } from '@protocoltooling/webmcp';
+
+export function useWebMCP(businessSlug: string, businessName: string) {
+  const [result, setResult] = useState<RegistrationResult | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    registerBusinessToolsWhenReady({
+      businessSlug,
+      businessName,
+      apiBaseUrl: 'https://api.protocoltooling.com',
+      signal: controller.signal,
+    }).then(setResult);
+
+    return () => controller.abort();
+  }, [businessSlug, businessName]);
+
+  return result;
+}
+```

@@ -1,0 +1,44 @@
+---
+title: Build a Multi-Resource Business (Clinics & Auto Repair)
+description: Modeling complex multi-resource dependencies requiring simultaneous staff and facility locks.
+---
+
+# Build a Multi-Resource Business (Clinics & Auto Repair)
+
+Some business operations cannot function with staff alone; they require physical rooms, equipment bays, or diagnostic machinery to be available at the exact same time.
+
+---
+
+## Key Characteristics
+
+1. **Composite Requirements**: A service requires `[1 Therapist, 1 Treatment Room]` or `[1 Mechanic, 1 Bay]`.
+2. **Independent Schedules**: Rooms and bays have operating hours separate from individual staff shifts.
+3. **Double-Lock Prevention**: An appointment is only valid if both the staff member and physical room are free.
+
+---
+
+## Modeling Example: Harbor Physical Therapy
+
+```json
+{
+  "service": {
+    "id": "svc_pt_eval",
+    "name": "Physical Therapy Evaluation",
+    "duration_minutes": 60,
+    "price_cents": 11000,
+    "location_policy": "BUSINESS",
+    "service_area_required": false,
+    "resource_requirements": [
+      {
+        "resource_type": "therapist",
+        "quantity": 1,
+        "capability": "physical_therapy_eval"
+      },
+      {
+        "resource_type": "treatment_room",
+        "quantity": 1
+      }
+    ]
+  }
+}
+```

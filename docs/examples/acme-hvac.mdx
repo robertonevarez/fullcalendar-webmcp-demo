@@ -1,0 +1,42 @@
+---
+title: Acme Heating & Air (HVAC Archetype)
+description: Production seed configuration, services, and agent tool payloads for Acme HVAC.
+---
+
+# Acme Heating & Air (HVAC Archetype)
+
+Acme Heating & Air is a field-service HVAC business based in Austin, TX (`America/Chicago`).
+
+---
+
+## Business Summary
+
+* **Business ID**: `biz_acme_hvac`
+* **Slug**: `acme-hvac`
+* **Location Mode**: `CUSTOMER_LOCATION`
+* **Service Area Zones**: `austin-central` (`78701`, `78702`, `78704`, `78705`)
+
+---
+
+## Seeded Services
+
+1. **AC Diagnostic Visit (`svc_ac_diagnostic`)**:
+   - Duration: 90 minutes
+   - Price: $89.00 USD (`8900` cents)
+   - Required Capability: `hvac_diagnostic`
+   - Location Policy: `CUSTOMER` (requires postal code check)
+2. **AC Repair (`svc_ac_repair`)**:
+   - Duration: 120 minutes
+   - Price: $149.00 USD (`14900` cents)
+   - Required Capability: `hvac_repair`
+3. **Preventive Maintenance (`svc_preventive`)**:
+   - Duration: 60 minutes
+   - Price: $79.00 USD (`7900` cents)
+   - Required Capability: `hvac_maintenance`
+
+---
+
+## Seeded Resources
+
+* **Maria Lopez (`res_hvac_maria`)**: Technician with capabilities `['hvac_diagnostic', 'hvac_repair', 'hvac_maintenance']`.
+* **James Carter (`res_hvac_james`)**: Technician with capabilities `['hvac_diagnostic', 'hvac_maintenance']`.

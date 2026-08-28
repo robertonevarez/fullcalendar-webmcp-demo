@@ -1,0 +1,40 @@
+---
+title: REST API Overview
+description: Architecture and mapping of the underlying Protocol Tooling REST API.
+---
+
+# REST API Overview
+
+The **Protocol Tooling REST API** (`https://api.protocoltooling.com`) is the authoritative backend transport layer that backs WebMCP tools.
+
+---
+
+## Why Both WebMCP and REST Exist
+
+```text
+WebMCP (Browser Surface)
+   │  Standardized in-browser capability interface for personal AI agents
+   ▼
+REST API (api.protocoltooling.com)
+   │  Stateless JSON over HTTPS transport, secured with CORS & idempotency
+   ▼
+BookingService & Scheduler (PostgreSQL)
+      Authoritative business logic, multi-resource matching, transactional locking
+```
+
+* **WebMCP** lives in the user's browser runtime, exposing lightweight tool descriptors without database state.
+* **REST API** provides a universal HTTP transport layer enabling web browsers, server backends, mobile apps, and developer scripts to interact with the scheduling engine.
+
+---
+
+## Base URLs and Routing
+
+* **Production API**: `https://api.protocoltooling.com`
+* **Local Development**: `http://localhost:3000`
+
+All endpoints follow the canonical pattern:
+```text
+POST /api/businesses/{slug}/{operation}
+```
+
+Interactive OpenAPI documentation is available directly under the [OpenAPI Reference](/api/reference).

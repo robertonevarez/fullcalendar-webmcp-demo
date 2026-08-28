@@ -1,0 +1,41 @@
+---
+title: Harbor Physical Therapy (Clinical Multi-Resource Archetype)
+description: Production seed configuration, clinical evaluations, and dual-resource matrices for Harbor PT.
+---
+
+# Harbor Physical Therapy (Clinical Multi-Resource Archetype)
+
+Harbor Physical Therapy is an outpatient rehabilitation clinic in Northwest Austin, TX.
+
+---
+
+## Business Summary
+
+* **Business ID**: `biz_harbor_pt`
+* **Slug**: `harbor-physical-therapy`
+* **Location Mode**: `BUSINESS_LOCATION`
+* **Operating Hours**: Monday–Thursday 8:00 AM – 6:00 PM, Friday 8:00 AM – 4:00 PM.
+
+---
+
+## Seeded Services
+
+1. **Physical Therapy Evaluation (`svc_pt_eval`)**:
+   - Duration: 60 minutes
+   - Price: $110.00 USD (`11000` cents)
+   - Requirements: `[1 therapist (capability: physical_therapy_eval), 1 treatment_room]`
+2. **Chiropractic Follow-Up (`svc_chiro_followup`)**:
+   - Duration: 30 minutes
+   - Price: $65.00 USD (`6500` cents)
+   - Requirements: `[1 therapist (capability: chiropractic_followup), 1 treatment_room]`
+3. **Wellness Consultation (`svc_wellness_consult`)**:
+   - Duration: 45 minutes
+   - Price: $75.00 USD (`7500` cents)
+   - Requirements: `[1 therapist (capability: wellness_consultation), 1 treatment_room]`
+
+---
+
+## Seeded Resources
+
+* **Clinicians**: Elena Brooks (`res_pt_elena`), Marcus Chen (`res_pt_marcus`).
+* **Rooms**: Clinic Room 1 (`res_clinic_room_1`), Clinic Room 2 (`res_clinic_room_2`).

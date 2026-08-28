@@ -1,0 +1,35 @@
+---
+title: BookingService
+description: Application layer orchestration, input validation, and transaction coordinator.
+---
+
+# BookingService
+
+`BookingService` is the central orchestrator in Protocol Tooling. It mediates between the HTTP API endpoints and the domain scheduler / database repositories.
+
+---
+
+## Responsibilities
+
+* **Domain Validation**: Resolves business slugs, verifies active services, and enforces required fields.
+* **Context Construction**: Loads business hours, assigned resources, existing appointments, and blocked periods into a `SchedulerContext`.
+* **Service Area Filtering**: Evaluates postal code zones against requested services.
+* **Slot Revalidation**: Re-verifies that a tokenized `slot_id` remains available before committing.
+* **Idempotency Guard**: Ensures client retries do not create duplicate appointments.
+
+---
+
+## Implementation Reference
+
+```ts
+export class BookingService {
+  async searchServices(businessSlug: string, query?: string) { ... }
+  async getServiceDetails(businessSlug: string, serviceId: string) { ... }
+  async checkServiceArea(businessSlug: string, serviceId: string, postalCode?: string) { ... }
+  async getAvailability(businessSlug: string, query: AvailabilityQuery) { ... }
+  async createAppointment(businessSlug: string, input: CreateAppointmentInput) { ... }
+  async getAppointment(businessSlug: string, appointmentId: string) { ... }
+  async rescheduleAppointment(businessSlug: string, appointmentId: string, newSlotId: string) { ... }
+  async cancelAppointment(businessSlug: string, appointmentId: string, reason?: string) { ... }
+}
+```

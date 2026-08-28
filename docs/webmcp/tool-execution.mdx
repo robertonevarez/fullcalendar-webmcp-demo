@@ -1,0 +1,58 @@
+---
+title: Tool Execution
+description: Execution pipeline, payload wrapping, and tool annotations.
+---
+
+# Tool Execution
+
+When an AI agent invokes a WebMCP tool, the browser executes the registered `execute` callback.
+
+---
+
+## Tool Factory Pattern
+
+Tools are instantiated per business using `createBusinessTools`:
+
+```ts
+export function createBusinessTools(options: CreateBusinessToolsOptions) {
+  const { businessSlug, businessName, apiBaseUrl } = options;
+  const base = normalizeApiBaseUrl(apiBaseUrl);
+
+  return [
+    {
+      name: 'search_services',
+      description: `Search bookable services for ${businessName}.`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Search term or symptom' },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+      execute: async (input: { query?: string }, opts?: ToolExecuteOptions) =>
+        postJson(`${base}/api/businesses/${businessSlug}/search-services`, input, opts),
+    },
+    // ... remaining 7 tools
+  ];
+}
+```
+
+---
+
+## Tool Annotations: Read-Only vs Mutations
+
+Protocol Tooling sets `readOnlyHint` on every tool:
+
+* `readOnlyHint: true`:
+  - `search_services`
+  - `get_service_details`
+  - `check_service_area`
+  - `get_availability`
+  - `get_appointment`
+* `readOnlyHint: false`:
+  - `create_appointment`
+  - `reschedule_appointment`
+  - `cancel_appointment`
+
+Agents use this annotation to determine whether user interaction is required before dispatching the tool call.

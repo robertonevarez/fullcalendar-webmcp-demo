@@ -1,0 +1,82 @@
+---
+title: Registration & Injection
+description: How tools are registered on document.modelContext with fallback polling.
+---
+
+# Registration & Injection
+
+In modern AI-capable browsers, the execution environment injects `document.modelContext` into the DOM.
+
+Because injection may occur asynchronously after the initial HTML parse or hydration phase (e.g. in ChatGPT's built-in browser), registration must poll until `registerTool` is available.
+
+---
+
+## The Registration Lifecycle Function
+
+Protocol Tooling provides `registerBusinessToolsWhenReady`:
+
+```ts
+import { registerBusinessToolsWhenReady } from '@protocoltooling/webmcp';
+
+const controller = new AbortController();
+
+const result = await registerBusinessToolsWhenReady({
+  businessSlug: 'acme-hvac',
+  businessName: 'Acme Heating & Air',
+  apiBaseUrl: 'https://api.protocoltooling.com',
+  timeoutMs: 10_000,
+  intervalMs: 100,
+  signal: controller.signal,
+});
+```
+
+---
+
+## Polling Algorithm
+
+The lifecycle manager executes the following polling loop:
+
+```ts
+export async function waitForModelContext(options: WaitForModelContextOptions = {}) {
+  const timeoutMs = options.timeoutMs ?? 10_000;
+  const intervalMs = options.intervalMs ?? 100;
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (options.signal?.aborted) return undefined;
+
+    const modelContext = getModelContext();
+    if (modelContext?.registerTool) return modelContext;
+
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(resolve, intervalMs);
+      options.signal?.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer);
+          reject(options.signal!.reason);
+        },
+        { once: true }
+      );
+    }).catch(() => undefined);
+  }
+
+  return getModelContext()?.registerTool ? getModelContext() : undefined;
+}
+```
+
+---
+
+## Registration Result Object
+
+The registration process returns a structured result:
+
+```ts
+export interface RegistrationResult {
+  supported: boolean;   // True if document.modelContext was detected
+  attempted: boolean;   // True if registerTool was called
+  registered: string[]; // List of registered tool names
+  errors: Array<{ tool: string; message: string }>;
+  businessSlug: string;
+}
+```

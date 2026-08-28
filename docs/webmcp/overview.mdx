@@ -1,0 +1,37 @@
+---
+title: WebMCP Overview
+description: How WebMCP enables client-side tool discovery for AI agents.
+---
+
+# WebMCP Overview
+
+**WebMCP** (Web Model Context Protocol) is the browser-level interface standard that allows web applications to expose structured tools directly to AI agents.
+
+---
+
+## Why WebMCP in the Browser?
+
+Traditionally, connecting an AI agent to a web application required either:
+* Centralized server-to-server MCP connectors (which require user credentials, API keys, and out-of-band configuration).
+* Brittle visual scraping through headless browser drivers.
+
+WebMCP operates **in the user's browser session**:
+
+```text
+1. User navigates to business website (e.g. acmehvac.com)
+2. Webpage registers scheduling tools on document.modelContext
+3. User's browser agent (Claude Code, ChatGPT Agent) reads registered tools
+4. Agent calls tools directly with structured arguments
+5. Webpage proxies tool calls to the Protocol Tooling API over HTTPS
+```
+
+---
+
+## What WebMCP Is and Is Not
+
+:::important
+* **WebMCP IS**: A browser capability discovery standard (`document.modelContext.registerTool`).
+* **WebMCP IS NOT**: The database or the scheduling engine.
+:::
+
+The browser does not make scheduling decisions or store appointments. All availability algorithms, double-booking prevention, concurrency locks, and idempotency checks are performed authoritatively by the Protocol Tooling backend (`https://api.protocoltooling.com`).

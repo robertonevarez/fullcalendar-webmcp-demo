@@ -1,0 +1,58 @@
+---
+title: Lifecycle & AbortSignal
+description: Lifecycle phases, timeouts, and cancellation handling in WebMCP.
+---
+
+# Lifecycle & AbortSignal
+
+Every tool registered through Protocol Tooling supports cancellation via `AbortSignal`.
+
+---
+
+## Lifecycle Phases
+
+The client component tracks four registration phases:
+
+```text
+1. waiting      --> Polling for document.modelContext
+2. registering  --> Executing registerTool for all 8 canonical tools
+3. registered   --> All tools successfully bound and active
+4. failed       --> Timeout elapsed without modelContext or registerTool error
+```
+
+---
+
+## Chrome & Browser Calling Conventions
+
+Browser implementations of WebMCP execute tool callbacks with one argument (the input JSON object). However, specifications allow an optional second options bag containing an `AbortSignal`.
+
+To ensure reliability across browser versions, Protocol Tooling's execution handler never assumes the second argument exists:
+
+```ts
+export async function postJson<T>(
+  url: string,
+  body: unknown,
+  options?: ToolExecuteOptions,
+): Promise<T> {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+      signal: options?.signal,
+    });
+    return (await response.json()) as T;
+  } catch (error) {
+    if (options?.signal?.aborted) {
+      return {
+        ok: false,
+        error: { code: 'REQUEST_ABORTED', message: 'Request was cancelled.', retryable: false }
+      } as T;
+    }
+    return {
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Network request failed.', retryable: true }
+    } as T;
+  }
+}
+```

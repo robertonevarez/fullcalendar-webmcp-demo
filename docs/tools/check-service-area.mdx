@@ -1,0 +1,89 @@
+---
+title: check_service_area
+description: Specification and usage for the check_service_area WebMCP tool.
+---
+
+# check_service_area
+
+### Purpose
+Checks whether a customer's postal code is within the active service area for field-service appointments.
+
+---
+
+### When to Call
+Call this tool immediately after identifying a customer address or postal code when the selected service has `service_area_required: true`.
+
+---
+
+### Tool Declaration & Schema
+
+```json
+{
+  "name": "check_service_area",
+  "description": "Check if a postal code is within the business service area for a service.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "service_id": { "type": "string", "description": "Target service ID" },
+      "postal_code": { "type": "string", "description": "5-digit US postal code" }
+    },
+    "required": ["service_id", "postal_code"],
+    "additionalProperties": false
+  },
+  "annotations": {
+    "readOnlyHint": true
+  }
+}
+```
+
+---
+
+### Example Input & Output
+
+**Tool Call (Eligible)**:
+```json
+{
+  "service_id": "svc_ac_diagnostic",
+  "postal_code": "78704"
+}
+```
+
+**Tool Response**:
+```json
+{
+  "ok": true,
+  "data": {
+    "status": "eligible",
+    "zone_id": "austin-central",
+    "message": "Postal code 78704 is within service area austin-central."
+  }
+}
+```
+
+**Tool Call (Ineligible)**:
+```json
+{
+  "service_id": "svc_ac_diagnostic",
+  "postal_code": "90210"
+}
+```
+
+**Tool Response**:
+```json
+{
+  "ok": true,
+  "data": {
+    "status": "ineligible",
+    "message": "Postal code 90210 is outside the service area for business biz_acme_hvac."
+  }
+}
+```
+
+---
+
+### Expected Domain Errors
+* `LOCATION_REQUIRED`: Missing postal code for a location-dependent service.
+* `SERVICE_NOT_FOUND`: Invalid `service_id`.
+
+### Underlying REST Endpoint
+`POST /api/businesses/:slug/check-service-area`

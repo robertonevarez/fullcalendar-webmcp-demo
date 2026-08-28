@@ -1,0 +1,47 @@
+---
+title: Error Handling & Diagnostics
+description: Structured domain errors vs network and runtime failures in WebMCP.
+---
+
+# Error Handling & Diagnostics
+
+Protocol Tooling strictly differentiates **domain-level business outcomes** from **runtime system failures**.
+
+---
+
+## 1. Structured Domain Errors
+
+Expected business constraints (e.g. customer address is outside the service area, or a slot was taken by someone else) are **successful tool executions** that return `{ ok: false, error: { code, message, retryable } }`:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "OUTSIDE_SERVICE_AREA",
+    "message": "Postal code 90210 is outside the service area for business biz_acme_hvac.",
+    "retryable": false,
+    "field": "postal_code"
+  }
+}
+```
+
+Because this is a valid domain outcome, the WebMCP layer does not throw exceptions or log console errors. The agent reads the code, explains the constraint to the user, and asks for a different address.
+
+---
+
+## 2. Runtime & Network Failures
+
+If the network connection drops or the backend is unreachable before a response is returned:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Tool request failed before a response was received.",
+    "retryable": true
+  }
+}
+```
+
+The agent observes `retryable: true` and can safely re-attempt the request with an exponential backoff.

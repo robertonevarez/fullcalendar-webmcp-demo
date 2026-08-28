@@ -1,0 +1,42 @@
+---
+title: Transactions & Locking
+description: Concurrency control, double-booking prevention, and ACID guarantees.
+---
+
+# Transactions & Locking
+
+To prevent race conditions where two AI agents concurrently attempt to book the same technician or treatment room, Protocol Tooling executes booking mutations inside ACID database transactions.
+
+---
+
+## Transaction Wrapper (`runInTransaction`)
+
+All state-changing operations in `BookingService` use `runInTransaction`:
+
+```ts
+export async function runInTransaction<T>(
+  callback: (client: pg.PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+```
+
+---
+
+## Conflict Detection & Rollback
+
+Inside the transaction, `BookingService`:
+1. Revalidates slot resource availability against existing appointments.
+2. Checks for conflicting `idempotency_records`.
+3. If any resource is already claimed by a parallel transaction, the transaction is immediately rolled back and throws `RESOURCE_UNAVAILABLE` or `SLOT_UNAVAILABLE`.

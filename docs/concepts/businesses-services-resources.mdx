@@ -1,0 +1,65 @@
+---
+title: Businesses, Services, and Resources
+description: Domain entity relationships and modeling in Protocol Tooling.
+---
+
+# Businesses, Services, and Resources
+
+Protocol Tooling structures scheduling around three fundamental domain concepts:
+
+```text
+┌─────────────────┐
+│    Business     │ (Timezone, Location Mode, Working Hours, Address)
+└────────┬────────┘
+         │
+         ├── has many ──────────> ┌─────────────────┐
+         │                        │     Service     │ (Duration, Price, Location Policy)
+         │                        └────────┬────────┘
+         │                                 │ requires
+         │                                 ▼
+         │                        ┌───────────────────────┐
+         │                        │ Resource Requirements │ (Quantity, Capability)
+         │                        └────────┬──────────────┘
+         │                                 │ allocated from
+         └── has many ──────────> ┌────────┴────────┐
+                                  │    Resource     │ (Human / Physical, Working Hours, Capabilities)
+                                  └─────────────────┘
+```
+
+---
+
+## 1. Business (`Business`)
+
+A business represents an organization or single operating location.
+
+* **`id`**: Unique identifier (e.g. `biz_acme_hvac`).
+* **`slug`**: URL-safe identifier (e.g. `acme-hvac`).
+* **`timezone`**: IANA timezone string (e.g. `America/Chicago`). All availability calculations are normalized against this timezone.
+* **`location_mode`**: One of `CUSTOMER_LOCATION` (field service), `BUSINESS_LOCATION` (in-facility / salon / clinic), or `EITHER`.
+* **`working_hours`**: Array of daily operating schedules (`day`: 0–6, `open`: "08:00", `close`: "20:00").
+
+---
+
+## 2. Service (`Service`)
+
+A bookable service offered by the business.
+
+* **`id`**: Service identifier (e.g. `svc_ac_diagnostic`).
+* **`name`** & **`description`**: Human-readable and agent-searchable descriptions.
+* **`duration_minutes`**: Required duration for the booking.
+* **`price_cents`** & **`currency`**: Flat price (e.g. `8900` USD = $89.00).
+* **`location_policy`**: `CUSTOMER` (technician travels to client), `BUSINESS` (client visits facility), or `NONE`.
+* **`service_area_required`**: Boolean indicating whether a postal code check is mandatory before checking availability or booking.
+* **`resource_requirements`**: List of resources required to fulfill the service.
+
+---
+
+## 3. Resource (`Resource`)
+
+The actual capacity units that perform or host the service.
+
+* **`id`**: Unique identifier (e.g. `res_hvac_maria`, `res_room_a`).
+* **`resource_type`**: Category tag (e.g. `hvac_technician`, `plumber`, `stylist`, `therapist`, `treatment_room`, `service_bay`).
+* **`capabilities`**: List of specific skills or features (e.g. `['hvac_diagnostic', 'hvac_repair']`).
+* **`is_human`**: Distinguishes staff members from physical assets (rooms, bays, equipment).
+* **`working_hours`**: Individual resource shift schedule.

@@ -1,0 +1,50 @@
+---
+title: API Error Envelopes
+description: Structured error envelopes and standard ErrorCodes enumeration.
+---
+
+# API Error Envelopes
+
+All Protocol Tooling API responses follow a uniform JSON contract:
+
+### Success Envelope
+```json
+{
+  "ok": true,
+  "data": { ... }
+}
+```
+
+### Error Envelope
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "OUTSIDE_SERVICE_AREA",
+    "message": "Postal code 90210 is outside the service area for business biz_acme_hvac.",
+    "retryable": false,
+    "field": "postal_code"
+  }
+}
+```
+
+---
+
+## Canonical `ErrorCodes` Enum
+
+| Error Code | HTTP Status | Retryable | Description |
+|---|---|---|---|
+| `BUSINESS_NOT_FOUND` | 400 | `false` | Business slug or ID does not exist |
+| `SERVICE_NOT_FOUND` | 400 | `false` | Service ID does not exist for this business |
+| `OUTSIDE_SERVICE_AREA` | 400 | `false` | Postal code is outside active service zones |
+| `LOCATION_REQUIRED` | 400 | `false` | Postal code is required but missing |
+| `INVALID_TIME_RANGE` | 400 | `false` | `start_date` is after `end_date` |
+| `NO_AVAILABILITY` | 400 | `false` | No slots match the criteria |
+| `SLOT_UNAVAILABLE` | 400 | `false` | Slot ID is expired or already booked |
+| `RESOURCE_UNAVAILABLE` | 400 | `false` | Required resource has a conflicting appointment |
+| `APPOINTMENT_NOT_FOUND` | 400 | `false` | Appointment ID does not exist |
+| `APPOINTMENT_NOT_RESCHEDULABLE` | 400 | `false` | Appointment is in cancelled status |
+| `APPOINTMENT_ALREADY_CANCELLED` | 400 | `false` | Appointment was previously cancelled |
+| `IDEMPOTENCY_CONFLICT` | 400 | `false` | Key reused with different payload |
+| `VALIDATION_ERROR` | 400 | `false` | Payload failed structural schema checks |
+| `INTERNAL_ERROR` | 500 | `true` | Unexpected server or database exception |

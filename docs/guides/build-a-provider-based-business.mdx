@@ -1,0 +1,52 @@
+---
+title: Build a Provider-Based Business (Salon / Studio)
+description: Modeling provider-centric scheduling with staff preferences and on-site policies.
+---
+
+# Build a Provider-Based Business (Salon / Studio)
+
+Provider-based businesses (such as hair salons, massage studios, and private coaching practices) revolve around individual staff member schedules and on-site appointments.
+
+---
+
+## Key Characteristics
+
+1. **`location_mode: BUSINESS_LOCATION`**: Customers visit the business address.
+2. **`service_area_required: false`**: Anyone can book regardless of residential zip code.
+3. **Preferred Resource Selection**: Customers often request specific stylists or therapists via `preferred_resource_id`.
+
+---
+
+## Modeling Example: Northline Salon
+
+```json
+{
+  "business": {
+    "slug": "northline-salon",
+    "name": "Northline Salon",
+    "timezone": "America/Chicago",
+    "location_mode": "BUSINESS_LOCATION",
+    "address": {
+      "line1": "501 Northline Blvd",
+      "city": "Austin",
+      "region": "TX",
+      "postal_code": "78756"
+    }
+  },
+  "service": {
+    "id": "svc_haircut",
+    "name": "Haircut",
+    "duration_minutes": 45,
+    "price_cents": 4500,
+    "location_policy": "BUSINESS",
+    "service_area_required": false,
+    "resource_requirements": [
+      {
+        "resource_type": "stylist",
+        "quantity": 1,
+        "capability": "haircut"
+      }
+    ]
+  }
+}
+```

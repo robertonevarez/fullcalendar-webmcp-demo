@@ -1,0 +1,72 @@
+---
+title: cancel_appointment
+description: Specification and usage for the cancel_appointment WebMCP tool.
+---
+
+# cancel_appointment
+
+### Purpose
+Marks an existing appointment as cancelled and releases associated resource locks immediately.
+
+---
+
+### When to Call
+:::important
+**Human confirmation required.** Query `get_appointment` first to verify details, confirm cancellation with the user, and then execute.
+:::
+
+---
+
+### Tool Declaration & Schema
+
+```json
+{
+  "name": "cancel_appointment",
+  "description": "Cancel an existing appointment.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "appointment_id": { "type": "string" },
+      "reason": { "type": "string", "description": "Optional cancellation reason" }
+    },
+    "required": ["appointment_id"],
+    "additionalProperties": false
+  },
+  "annotations": {
+    "readOnlyHint": false
+  }
+}
+```
+
+---
+
+### Example Input & Output
+
+**Tool Call**:
+```json
+{
+  "appointment_id": "appt_9b7c81df",
+  "reason": "Customer needs to postpone travel plans"
+}
+```
+
+**Tool Response**:
+```json
+{
+  "ok": true,
+  "data": {
+    "appointment_id": "appt_9b7c81df",
+    "status": "cancelled",
+    "cancelled_at": "2026-08-28T16:21:00.000Z"
+  }
+}
+```
+
+---
+
+### Expected Domain Errors
+* `APPOINTMENT_NOT_FOUND`: Appointment does not exist for the business.
+* `APPOINTMENT_ALREADY_CANCELLED`: The appointment is already in `cancelled` status.
+
+### Underlying REST Endpoint
+`POST /api/businesses/:slug/appointments/cancel`

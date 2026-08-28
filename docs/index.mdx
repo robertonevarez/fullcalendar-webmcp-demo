@@ -1,0 +1,97 @@
+---
+title: Protocol Tooling Documentation
+description: Agent-native scheduling infrastructure for service businesses, exposed through WebMCP.
+---
+
+# Protocol Tooling
+
+**Agent-native scheduling infrastructure for service businesses, exposed through WebMCP.**
+
+Protocol Tooling provides the backend scheduling engine, deterministic resource allocators, and browser-level capability surfaces required for personal AI agents (such as Claude Code, ChatGPT Agent, or custom user agents) to discover services, check service-area eligibility, query live availability, and book appointments directly on a business's website.
+
+---
+
+## Core System Architecture
+
+```text
+Personal AI Agent
+        │
+        │ WebMCP (document.modelContext)
+        ▼
+Business Website / Browser Client
+        │
+        │ HTTPS POST
+        ▼
+Protocol Tooling API (api.protocoltooling.com)
+        │
+        ▼
+BookingService (Application Orchestration)
+        │
+        ▼
+Scheduler / Domain Rules (Resource Allocation & Multi-Resource Matrix)
+        │
+        ▼
+Persistence Layer (PostgreSQL Repository)
+```
+
+:::note
+**WebMCP is an agent capability interface, not a scheduling engine.** The browser exposes in-page tools to the user's personal agent, while the authoritative Protocol Tooling backend enforces availability, concurrency locks, service-area boundaries, and transactional idempotency.
+:::
+
+---
+
+## Documentation Sections
+
+Explore technical specifications, lifecycle flows, and integration guides across the platform:
+
+<CardGroup>
+  <Card title="Getting Started" href="/getting-started/overview">
+    High-level overview, quickstart integration walkthrough, and instructions for running the core backend locally.
+  </Card>
+  <Card title="Concepts" href="/concepts/agent-native-scheduling">
+    Deep dives into agent-native scheduling philosophy, domain modeling, slot computation, and service areas.
+  </Card>
+  <Card title="WebMCP Integration" href="/webmcp/overview">
+    How browser registration works with `document.modelContext`, tool lifecycle hooks, human confirmation, and error boundaries.
+  </Card>
+  <Card title="WebMCP Tools Reference" href="/tools/overview">
+    Formal input schemas, returned identifiers, domain error codes, and side-effect guarantees for all 8 canonical tools.
+  </Card>
+  <Card title="REST API Reference" href="/api/overview">
+    Underlying HTTP transport endpoints, idempotency scope hashing, and interactive OpenAPI documentation.
+  </Card>
+  <Card title="Architecture" href="/architecture/booking-service">
+    Internals of `BookingService`, deterministic multi-resource scheduler algorithms, and PostgreSQL transaction isolation.
+  </Card>
+  <Card title="Integration Guides" href="/guides/add-protocol-tooling-to-a-business">
+    Step-by-step guides for field service businesses (HVAC), provider scheduling (Salons), and multi-resource clinics.
+  </Card>
+  <Card title="Concrete Examples" href="/examples/acme-hvac">
+    Production-ready payloads, seed schemas, and tool sequence walkthroughs across 5 canonical business archetypes.
+  </Card>
+</CardGroup>
+
+---
+
+## The Eight Canonical WebMCP Tools
+
+Protocol Tooling standardizes 8 capability primitives for service scheduling:
+
+| Tool | Type | Purpose | Underlying REST Endpoint |
+|---|---|---|---|
+| [`search_services`](/tools/search-services) | Read-only | Find active services by intent/keyword query | `POST /api/businesses/:slug/search-services` |
+| [`get_service_details`](/tools/get-service-details) | Read-only | Fetch duration, pricing, and intake fields | `POST /api/businesses/:slug/get-service-details` |
+| [`check_service_area`](/tools/check-service-area) | Read-only | Verify postal code eligibility for field visits | `POST /api/businesses/:slug/check-service-area` |
+| [`get_availability`](/tools/get-availability) | Read-only | Compute available slot tokens across date ranges | `POST /api/businesses/:slug/get-availability` |
+| [`create_appointment`](/tools/create-appointment) | Mutation | Authoritatively book appointment using slot ID | `POST /api/businesses/:slug/create-appointment` |
+| [`get_appointment`](/tools/get-appointment) | Read-only | Query status, timing, and assigned resources | `POST /api/businesses/:slug/appointments/get` |
+| [`reschedule_appointment`](/tools/reschedule-appointment) | Mutation | Move confirmed booking to new slot ID | `POST /api/businesses/:slug/appointments/reschedule` |
+| [`cancel_appointment`](/tools/cancel-appointment) | Mutation | Release resources and mark booking cancelled | `POST /api/businesses/:slug/appointments/cancel` |
+
+---
+
+## Repositories & Environments
+
+* **Documentation & Guides**: [`https://protocoltooling.com`](https://protocoltooling.com) (`robertonevarez/protocoltooling-demo`)
+* **Core Engine & API**: [`https://api.protocoltooling.com`](https://api.protocoltooling.com) (`robertonevarez/protocoltooling`)
+* **Source Repository**: [GitHub: `robertonevarez/protocoltooling`](https://github.com/robertonevarez/protocoltooling)

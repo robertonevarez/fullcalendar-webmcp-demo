@@ -1,0 +1,60 @@
+---
+title: Agent-Native Scheduling
+description: Understanding the paradigm shift from human UI funnels to agent capability surfaces.
+---
+
+# Agent-Native Scheduling
+
+**Agent-native scheduling** re-imagines how bookings happen when the primary actor interacting with a business website is a personal AI assistant working on behalf of a human customer.
+
+---
+
+## The Shift from Forms to Capabilities
+
+Traditional online booking funnels rely on human visual intuition:
+
+* Calendering widgets that require clicking forward month-by-month.
+* Multi-page modal dialogs asking for personal information before showing pricing.
+* Client-side form validation scripts that reject input without explanation.
+
+For an AI agent, visual funnels are inefficient and prone to failure. Protocol Tooling replaces visual friction with **first-class browser capability surfaces**:
+
+```text
+Human-Centric Funnel (Fragile)
+DOM Scraping ──> Click Next Month ──> Select Day ──> Fill Modal Form ──> Submit
+
+Agent-Native Workflow (Deterministic)
+WebMCP Tool Discovery ──> Structured Intent Query ──> Tokenized Slots ──> Confirmed Booking
+```
+
+---
+
+## Separation of Roles
+
+In the Protocol Tooling architecture, three distinct entities participate in scheduling:
+
+1. **The Personal AI Agent**:
+   - Acts as the customer's trusted representative.
+   - Manages personal preferences (budget, calendar conflicts, address).
+   - Solicits human confirmation before committing mutations.
+
+2. **The Business Browser Webpage (WebMCP)**:
+   - Exposes in-page tool declarations via `document.modelContext.registerTool`.
+   - Bridges tool invocations directly to the business API over HTTPS.
+   - Provides runtime fallback and lifecycle management without persisting backend state.
+
+3. **The Protocol Tooling Authoritative Backend**:
+   - Manages business records, resource schedules, blocked time, and bookings in PostgreSQL.
+   - Validates service-area constraints and computes multi-resource availability matrices.
+   - Enforces transactional locking and idempotency guarantees.
+
+---
+
+## Agent Autonomy vs. Human Confirmation
+
+Protocol Tooling explicitly distinguishes **read-only inspection tools** from **stateful mutation tools**:
+
+* **Read-Only Tools** (`search_services`, `get_service_details`, `check_service_area`, `get_availability`, `get_appointment`):
+  Carries `annotations: { readOnlyHint: true }`. Agents can execute these autonomously to gather facts, compute prices, and evaluate schedules.
+* **Mutation Tools** (`create_appointment`, `reschedule_appointment`, `cancel_appointment`):
+  Carries `annotations: { readOnlyHint: false }`. Agents should present pricing, timing, and cancellation terms to the human user for explicit confirmation before invocation.
