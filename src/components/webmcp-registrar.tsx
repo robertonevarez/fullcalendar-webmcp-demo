@@ -5,20 +5,26 @@ import {
   logRegistrationState,
   registerBusinessToolsWhenReady,
   type WebMCPRegistrationState,
-} from '@/webmcp/lifecycle';
-import { isWebMCPSupported } from '@/webmcp/tools';
+  isWebMCPSupported,
+} from '@/lib/webmcp-client';
 
-interface WebMCPRegistrarProps {
+export interface WebMCPRegistrarProps {
   businessSlug: string;
   businessName: string;
+  apiBaseUrl?: string;
   onStateChange?: (state: WebMCPRegistrationState) => void;
 }
 
 /**
  * Registers business WebMCP tools as early as possible in the page lifecycle.
- * Polls for late modelContext injection (ChatGPT built-in browser).
+ * Routes tool calls to the external Protocol Tooling API.
  */
-export function WebMCPRegistrar({ businessSlug, businessName, onStateChange }: WebMCPRegistrarProps) {
+export function WebMCPRegistrar({
+  businessSlug,
+  businessName,
+  apiBaseUrl,
+  onStateChange,
+}: WebMCPRegistrarProps) {
   const onStateChangeRef = useRef(onStateChange);
 
   useLayoutEffect(() => {
@@ -41,7 +47,12 @@ export function WebMCPRegistrar({ businessSlug, businessName, onStateChange }: W
       publish({ phase: 'waiting', supported: false, attempted: false });
     }
 
-    registerBusinessToolsWhenReady(businessSlug, businessName, controller.signal)
+    registerBusinessToolsWhenReady({
+      businessSlug,
+      businessName,
+      apiBaseUrl,
+      signal: controller.signal,
+    })
       .then((state) => publish(state))
       .catch((error) => {
         publish({
@@ -58,7 +69,7 @@ export function WebMCPRegistrar({ businessSlug, businessName, onStateChange }: W
       active = false;
       controller.abort();
     };
-  }, [businessSlug, businessName]);
+  }, [businessSlug, businessName, apiBaseUrl]);
 
   return null;
 }

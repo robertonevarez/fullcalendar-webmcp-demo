@@ -2,23 +2,38 @@ import { notFound } from 'next/navigation';
 import { Page, Section } from '@/components/layout';
 import { WebMCPBusinessProvider } from '@/components/webmcp-business-provider';
 import { WebMCPStatus } from '@/components/webmcp-status';
-import { ensureDatabaseSeeded } from '@/db/init';
-import { bookingRepository } from '@/db/repository';
+import { DEMO_PRESETS } from '@/demo/presets';
 
 export const dynamic = 'force-dynamic';
+
+const BUSINESS_LOOKUP: Record<string, { slug: string; name: string }> = {
+  'acme-hvac': { slug: 'acme-hvac', name: 'Acme Heating & Air' },
+  'northline-salon': { slug: 'northline-salon', name: 'Northline Salon' },
+  'mesa-auto': { slug: 'mesa-auto-service', name: 'Mesa Auto Service' },
+  'mesa-auto-service': { slug: 'mesa-auto-service', name: 'Mesa Auto Service' },
+  'blue-pipe-plumbing': { slug: 'blue-pipe-plumbing', name: 'Blue Pipe Plumbing' },
+  'harbor-physical-therapy': { slug: 'harbor-physical-therapy', name: 'Harbor Physical Therapy' },
+};
+
+function resolveBusiness(slug: string): { slug: string; name: string } | null {
+  const match = BUSINESS_LOOKUP[slug];
+  if (match) return match;
+  const preset = DEMO_PRESETS.find((p) => p.id === slug);
+  if (preset) return { slug: preset.id, name: preset.config.businessName };
+  return null;
+}
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await ensureDatabaseSeeded();
   const { slug } = await params;
-  const business = await bookingRepository.getBusinessBySlug(slug);
-  if (!business) return { title: 'Business' };
+  const business = resolveBusiness(slug);
+  const name = business?.name ?? 'Business';
   return {
-    title: business.name,
-    description: `Agent-bookable scheduling surface for ${business.name} via WebMCP.`,
+    title: name,
+    description: `Agent-bookable scheduling surface for ${name} via WebMCP.`,
   };
 }
 
@@ -27,9 +42,9 @@ export default async function BusinessPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await ensureDatabaseSeeded();
   const { slug } = await params;
-  const business = await bookingRepository.getBusinessBySlug(slug);
+  const business = resolveBusiness(slug);
+
   if (!business) notFound();
 
   return (

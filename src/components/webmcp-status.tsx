@@ -3,7 +3,7 @@
 import { Panel } from '@/components/layout';
 import { useWebMCPRegistrationState } from '@/components/webmcp-business-provider';
 import { spacing } from '@/lib/design-system';
-import { WEBMCP_TOOL_NAMES } from '@/webmcp/tools';
+import { WEBMCP_TOOL_NAMES } from '@/lib/webmcp-client';
 import { cn } from '@/lib/utils';
 
 interface WebMCPStatusProps {

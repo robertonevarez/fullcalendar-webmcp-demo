@@ -8,8 +8,9 @@ import {
   logRegistrationState,
   registerPingTool,
   waitForModelContext,
-} from '@/webmcp/lifecycle';
-import { getModelContext, isWebMCPSupported } from '@/webmcp/tools';
+  getModelContext,
+  isWebMCPSupported,
+} from '@/lib/webmcp-client';
 
 type DebugState = {
   modelContextPresent: boolean;

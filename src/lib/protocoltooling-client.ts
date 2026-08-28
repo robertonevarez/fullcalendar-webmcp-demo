@@ -5,21 +5,33 @@
  * Protocol Tooling core infrastructure backend.
  */
 
-export const DEFAULT_BACKEND_URL =
-  process.env.NEXT_PUBLIC_PROTOCOLTOOLING_API_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://protocoltooling.com'
-    : 'http://localhost:3000');
+export function getProtocolToolingApiUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_PROTOCOLTOOLING_API_URL;
+
+  if (process.env.NODE_ENV === 'production' && !configuredUrl) {
+    throw new Error('NEXT_PUBLIC_PROTOCOLTOOLING_API_URL is required in production.');
+  }
+
+  return configuredUrl ? configuredUrl.trim().replace(/\/+$/, '') : 'http://localhost:3000';
+}
 
 export class ProtocolToolingClient {
-  readonly baseUrl: string;
+  readonly getBaseUrl: () => string;
 
-  constructor(baseUrl: string = DEFAULT_BACKEND_URL) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+  constructor(baseUrlOrGetter?: string | (() => string)) {
+    if (typeof baseUrlOrGetter === 'function') {
+      this.getBaseUrl = baseUrlOrGetter;
+    } else if (typeof baseUrlOrGetter === 'string') {
+      const clean = baseUrlOrGetter.trim().replace(/\/+$/, '');
+      this.getBaseUrl = () => clean;
+    } else {
+      this.getBaseUrl = getProtocolToolingApiUrl;
+    }
   }
 
   private async post<T>(path: string, body: Record<string, unknown>): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,10 +53,18 @@ export class ProtocolToolingClient {
    * Search for services offered by a business matching a natural language or keyword query.
    */
   async searchServices(businessSlug: string, query?: string) {
-    return this.post<{ services: Array<{ id: string; name: string; description: string; price_cents: number; currency: string; duration_minutes: number; location_policy: string; service_area_required: boolean }> }>(
-      `/api/businesses/${encodeURIComponent(businessSlug)}/search-services`,
-      { query },
-    );
+    return this.post<{
+      services: Array<{
+        id: string;
+        name: string;
+        description: string;
+        price_cents: number;
+        currency: string;
+        duration_minutes: number;
+        location_policy: string;
+        service_area_required: boolean;
+      }>;
+    }>(`/api/businesses/${encodeURIComponent(businessSlug)}/search-services`, { query });
   }
 
   /**

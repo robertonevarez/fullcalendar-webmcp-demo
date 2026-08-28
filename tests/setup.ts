@@ -1,11 +1,8 @@
 import { beforeEach } from 'vitest';
-import { seedDatabase } from '@/db/seed';
-import { resetInitFlagForTests } from '@/db/init';
 
-process.env.DATABASE_URL =
-  process.env.DATABASE_URL ?? 'postgresql://localhost:5432/protocoltooling_test';
+process.env.NEXT_PUBLIC_PROTOCOLTOOLING_API_URL =
+  process.env.NEXT_PUBLIC_PROTOCOLTOOLING_API_URL ?? 'http://localhost:3000';
 
-beforeEach(async () => {
-  resetInitFlagForTests();
-  await seedDatabase(true);
+beforeEach(() => {
+  // Pure presentation & in-memory demo tests (no database required)
 });
