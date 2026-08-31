@@ -6,7 +6,7 @@ import type {
   UpdateCalendarEventInput,
 } from "@protocoltooling/fullcalendar";
 
-const STORAGE_KEY_PREFIX = "protocoltooling-demo:calendar-events:v1";
+const STORAGE_KEY_PREFIX = "protocoltooling-demo:calendar-events:v2";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 

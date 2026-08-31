@@ -23,6 +23,7 @@ import {
   createSeedEvents,
   DEMO_INITIAL_DATE,
   DEMO_STORAGE_KEY,
+  DEMO_TIME_ZONE,
   DEMO_VALID_RANGE,
 } from "./seed-events";
 
@@ -100,11 +101,19 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
           initialView="dayGridMonth"
           initialDate={DEMO_INITIAL_DATE}
           validRange={DEMO_VALID_RANGE}
+          timeZone={DEMO_TIME_ZONE}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
+          // Native Month-view time labels: "9:00 AM – 10:30 AM Title"
+          eventTimeFormat={{
+            hour: "numeric",
+            minute: "2-digit",
+            meridiem: "short",
+          }}
+          displayEventEnd
           editable
           events={events.map((event) => {
             const swatch = paletteForEventId(event.id);

@@ -2,11 +2,19 @@
 
 A minimal enterprise FullCalendar host used to demonstrate the FullCalendar WebMCP integration published by [Protocol Tooling](https://protocoltooling.com).
 
-This branch includes **Phase D4.1** on top of D4: Inter typography and Blume-aligned surface tokens matching Protocol Tooling, plus a restrained deterministic event palette for same-day differentiation. Behavior, seeds, persistence, and WebMCP tools are unchanged. There is still no agent/chat UI — WebMCP remains invisible infrastructure.
+There is no embedded agent/chat UI. The calendar itself is the demo surface; WebMCP tools are invisible infrastructure for an external WebMCP-capable browser or agent.
 
 ## What you should see
 
-Opening the app shows a full-page FullCalendar locked to **September–November 2026**, starting on September, with a dense enterprise seed calendar for that month. Human drag/resize and agent tool calls both persist through the same local repository.
+Opening the app shows a full-page FullCalendar locked to **September–November 2026**, starting in **Month** view on September.
+
+The canonical seed set is a mixed operations calendar:
+
+- **Timed** appointments with varied business-hour durations (majority)
+- **All-day** items where that semantics fit (inventory, drills, planning days)
+- **Multi-day** operations with FullCalendar exclusive-end dates
+
+Month view shows start–end time text on timed events. **Week** and **Day** views place the same events on the time grid. Human drag/resize and agent tool calls both persist through one browser-local repository.
 
 ## Commands
 
@@ -21,7 +29,7 @@ npm run build
 
 ## Reset demo state
 
-Restore the deterministic seed calendar without opening DevTools:
+Restore the deterministic timed seed calendar without opening DevTools:
 
 ```text
 /?reset=1
@@ -39,12 +47,23 @@ LocalCalendarEventRepository (Sep–Nov 2026 localStorage window)
 FullCalendar host state
 ```
 
+Agent mutations and human drag/resize converge on the same authoritative store. Reloading the page keeps the latest persisted events; `/?reset=1` rewrites the store from the canonical seeds.
+
 ## Seed / persistence strategy
 
 - The calendar `validRange` is fixed to September–November 2026 (`initialDate` = Sep 1).
-- Seeds densely fill September and lightly cover October and November with stable IDs.
-- Persistence uses one window key (`…:v1:2026-sep-nov`); `/?reset=1` rewrites that store from seeds.
+- FullCalendar `timeZone` is `America/New_York`. Timed seeds use explicit Eastern offsets (EDT −04:00 through Nov 1; EST −05:00 afterward).
+- Persistence uses one window key (`…:v2:2026-sep-nov`). Bumping the key version forces browsers that still hold the old all-day-only dataset onto the new seeds.
 - Invalid localStorage payloads are detected and rewritten with fresh seeds.
+
+## FullCalendar options of note
+
+| Option | Value | Why |
+| --- | --- | --- |
+| `initialView` | `dayGridMonth` | Month remains the default overview |
+| `timeZone` | `America/New_York` | Consistent wall-clock display across visitors |
+| `eventTimeFormat` | 12-hour with short meridiem | Readable Month/Week/Day time labels |
+| `displayEventEnd` | `true` | Show start–end ranges in Month view |
 
 ## WebMCP tools
 
