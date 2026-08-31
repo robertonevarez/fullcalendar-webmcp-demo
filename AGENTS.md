@@ -2,6 +2,7 @@
 
 - This repository is a minimal Next.js FullCalendar host for the FullCalendar WebMCP demo.
 - Phase D1 wires `@protocoltooling/fullcalendar`, a browser-local `CalendarEventRepository`, and the six calendar WebMCP tools.
+- Phase D1.1 hardens localStorage validation/self-repair, month-scoped persistence, and `?reset=1`.
 - Calendar UI lives in `src/calendar/CalendarApp.tsx`.
 - Seed events live in `src/calendar/seed-events.ts`.
 - Persistence adapter lives in `src/calendar/local-calendar-repository.ts`.

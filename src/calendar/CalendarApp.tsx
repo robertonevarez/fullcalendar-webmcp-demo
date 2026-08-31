@@ -15,7 +15,12 @@ import {
   type CalendarEvent,
 } from "@protocoltooling/fullcalendar";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { LocalCalendarEventRepository } from "./local-calendar-repository";
+import { persistHumanMove } from "./human-move";
+import {
+  LocalCalendarEventRepository,
+  storageKeyForMonth,
+} from "./local-calendar-repository";
+import { shouldResetFromSearch, stripResetParam } from "./reset";
 import { createSeedEvents } from "./seed-events";
 
 import "@fullcalendar/react/skeleton.css";
@@ -30,29 +35,20 @@ function useIsClient() {
   return useSyncExternalStore(subscribe, () => true, () => false);
 }
 
-function patchFromMove(info: EventDropInfo | EventResizeDoneInfo) {
-  const { event } = info;
-  if (!event.start) return null;
+type CalendarAppProps = {
+  /** Test seam: inject a repository instead of constructing the browser-local default. */
+  repository?: LocalCalendarEventRepository;
+};
 
-  return {
-    title: event.title,
-    start: event.allDay ? event.startStr : event.start.toISOString(),
-    end: event.end
-      ? event.allDay
-        ? event.endStr
-        : event.end.toISOString()
-      : null,
-    allDay: event.allDay,
-  };
-}
-
-export function CalendarApp() {
+export function CalendarApp({ repository: injectedRepository }: CalendarAppProps = {}) {
   const calendarRef = useRef<CalendarRef>(null);
   const isClient = useIsClient();
   const [repository] = useState(
     () =>
+      injectedRepository ??
       new LocalCalendarEventRepository({
         seedEvents: createSeedEvents(),
+        storageKey: storageKeyForMonth(),
       }),
   );
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -63,10 +59,20 @@ export function CalendarApp() {
 
   useEffect(() => {
     if (!isClient) return;
+
+    if (shouldResetFromSearch(window.location.search)) {
+      repository.resetToSeeds();
+      window.history.replaceState(
+        {},
+        "",
+        stripResetParam(window.location.href),
+      );
+    }
+
     // Initial hydrate from the authoritative repository (localStorage).
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async store read on client mount
     void reloadEvents();
-  }, [isClient, reloadEvents]);
+  }, [isClient, repository, reloadEvents]);
 
   useFullCalendarWebMCP({
     calendarRef,
@@ -76,18 +82,7 @@ export function CalendarApp() {
 
   const onHumanMove = useCallback(
     async (info: EventDropInfo | EventResizeDoneInfo) => {
-      const patch = patchFromMove(info);
-      if (!patch) {
-        info.revert();
-        return;
-      }
-
-      try {
-        await repository.update(info.event.id, patch);
-        await reloadEvents();
-      } catch {
-        info.revert();
-      }
+      await persistHumanMove(repository, info, reloadEvents);
     },
     [repository, reloadEvents],
   );
