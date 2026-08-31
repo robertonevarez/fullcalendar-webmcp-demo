@@ -3,10 +3,11 @@ import type {
   CalendarEventQuery,
   CalendarEventRepository,
   CreateCalendarEventInput,
+  JsonObject,
   UpdateCalendarEventInput,
 } from "@protocoltooling/fullcalendar";
 
-const STORAGE_KEY_PREFIX = "protocoltooling-demo:calendar-events:v2";
+const STORAGE_KEY_PREFIX = "protocoltooling-demo:calendar-events:v3";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -40,9 +41,35 @@ function normalizeInstant(value: string, allDay: boolean): string {
   return allDay ? date.toISOString().slice(0, 10) : date.toISOString();
 }
 
+function isJsonValue(value: unknown): boolean {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) return value.every(isJsonValue);
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).every(isJsonValue);
+  }
+  return false;
+}
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value as Record<string, unknown>).every(isJsonValue)
+  );
+}
+
 function normalizeEvent(
   id: string,
   input: CreateCalendarEventInput,
+  existingMetadata?: CalendarEvent["metadata"],
 ): CalendarEvent {
   if (!input.title.trim()) {
     throw new Error("Event title cannot be empty.");
@@ -63,13 +90,19 @@ function normalizeEvent(
     }
   }
 
-  return {
+  const event: CalendarEvent = {
     id,
     title: input.title.trim(),
     start,
     end,
     allDay,
   };
+
+  if (existingMetadata !== undefined) {
+    event.metadata = clone(existingMetadata) as JsonObject;
+  }
+
+  return event;
 }
 
 export function storageKeyForMonth(anchor: Date = new Date()): string {
@@ -81,14 +114,20 @@ export function storageKeyForMonth(anchor: Date = new Date()): string {
 export function isCalendarEvent(value: unknown): value is CalendarEvent {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
-  return (
-    typeof event.id === "string" &&
-    event.id.length > 0 &&
-    typeof event.title === "string" &&
-    typeof event.start === "string" &&
-    (event.end === null || typeof event.end === "string") &&
-    typeof event.allDay === "boolean"
-  );
+  if (
+    typeof event.id !== "string" ||
+    event.id.length === 0 ||
+    typeof event.title !== "string" ||
+    typeof event.start !== "string" ||
+    (event.end !== null && typeof event.end !== "string") ||
+    typeof event.allDay !== "boolean"
+  ) {
+    return false;
+  }
+  if (event.metadata !== undefined && !isJsonObject(event.metadata)) {
+    return false;
+  }
+  return true;
 }
 
 export function parseStoredEvents(raw: string): CalendarEvent[] | null {
@@ -177,12 +216,16 @@ export class LocalCalendarEventRepository implements CalendarEventRepository {
     }
 
     const current = events[index]!;
-    const updated = normalizeEvent(id, {
-      title: input.title ?? current.title,
-      start: input.start ?? current.start,
-      end: input.end === undefined ? current.end : input.end,
-      allDay: input.allDay ?? current.allDay,
-    });
+    const updated = normalizeEvent(
+      id,
+      {
+        title: input.title ?? current.title,
+        start: input.start ?? current.start,
+        end: input.end === undefined ? current.end : input.end,
+        allDay: input.allDay ?? current.allDay,
+      },
+      current.metadata,
+    );
     events[index] = updated;
     this.write(events);
     return clone(updated);

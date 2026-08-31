@@ -76,7 +76,7 @@ describe("createSeedEvents", () => {
     }
   });
 
-  it("exports a fixed Sep–Nov 2026 demo window and v2 storage key", () => {
+  it("exports a fixed Sep–Nov 2026 demo window and v3 storage key", () => {
     expect(DEMO_INITIAL_DATE).toBe("2026-09-01");
     expect(DEMO_TIME_ZONE).toBe("America/New_York");
     expect(DEMO_VALID_RANGE).toEqual({
@@ -84,8 +84,40 @@ describe("createSeedEvents", () => {
       end: "2026-12-01",
     });
     expect(DEMO_STORAGE_KEY).toBe(
-      "protocoltooling-demo:calendar-events:v2:2026-sep-nov",
+      "protocoltooling-demo:calendar-events:v3:2026-sep-nov",
     );
+  });
+
+  it("projects host-selected metadata and omits private seed fields", () => {
+    const siteSurvey = events.find((event) => event.id === "seed-sep-site-survey");
+    const projectReview = events.find(
+      (event) => event.id === "seed-sep-project-review",
+    );
+    const serviceVisit = events.find(
+      (event) => event.id === "seed-sep-service-visit",
+    );
+    const kickoff = events.find((event) => event.id === "seed-sep-kickoff");
+
+    expect(siteSurvey?.metadata).toEqual({
+      location: "North Campus",
+      team: "Facilities",
+    });
+    expect(projectReview?.metadata).toEqual({
+      location: "Central Office",
+      attendees: ["Sarah Chen", "Michael Torres"],
+    });
+    expect(serviceVisit?.metadata).toEqual({
+      location: "Warehouse 2",
+      team: "Field Operations",
+    });
+    expect(kickoff?.metadata).toBeUndefined();
+
+    const serialized = JSON.stringify(events);
+    expect(serialized).toContain("North Campus");
+    expect(serialized).toContain("Sarah Chen");
+    expect(serialized).not.toContain("tenant-secret");
+    expect(serialized).not.toContain("internal-9281");
+    expect(serialized).not.toContain("Sensitive internal note");
   });
 
   it("does not use personal-calendar wording", () => {

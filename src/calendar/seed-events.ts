@@ -1,4 +1,4 @@
-import type { CalendarEvent } from "@protocoltooling/fullcalendar";
+import type { CalendarEvent, JsonObject } from "@protocoltooling/fullcalendar";
 
 /** Exclusive end: December 1 opens the day after the last valid November day. */
 export const DEMO_VALID_RANGE = {
@@ -16,10 +16,10 @@ export const DEMO_TIME_ZONE = "America/New_York";
 
 /**
  * Persistence key for the fixed Sep–Nov 2026 window.
- * v2: mixed timed / all-day / multi-day canonical seeds (replaces all-day-only v1).
+ * v3: optional host-selected WebMCP metadata on a subset of seeds.
  */
 export const DEMO_STORAGE_KEY =
-  "protocoltooling-demo:calendar-events:v2:2026-sep-nov";
+  "protocoltooling-demo:calendar-events:v3:2026-sep-nov";
 
 /** US Eastern DST ends 2026-11-01; Nov 2+ is EST (−05:00). */
 function easternOffset(date: string): "-04:00" | "-05:00" {
@@ -38,6 +38,14 @@ type TimedSeed = {
   start: string;
   /** Local wall-clock exclusive end HH:MM in America/New_York. */
   end: string;
+  /** Agent-visible projection fields (optional). */
+  location?: string;
+  attendees?: string[];
+  team?: string;
+  /** Host-private — never projected into CalendarEvent.metadata. */
+  tenantId?: string;
+  billingCode?: string;
+  privateNotes?: string;
 };
 
 type AllDaySeed = {
@@ -47,12 +55,36 @@ type AllDaySeed = {
   start: string;
   /** Exclusive end YYYY-MM-DD for multi-day spans; omit for single day. */
   end?: string;
+  location?: string;
+  team?: string;
+  tenantId?: string;
+  billingCode?: string;
+  privateNotes?: string;
 };
+
+/**
+ * Project only intentionally agent-visible fields.
+ * Private host fields on the seed domain stay out of WebMCP.
+ */
+export function projectSeedMetadata(seed: {
+  location?: string;
+  attendees?: string[];
+  team?: string;
+}): JsonObject | undefined {
+  const metadata: JsonObject = {};
+  if (seed.location) metadata.location = seed.location;
+  if (seed.attendees?.length) metadata.attendees = [...seed.attendees];
+  if (seed.team) metadata.team = seed.team;
+  return Object.keys(metadata).length > 0 ? metadata : undefined;
+}
 
 /**
  * Deterministic enterprise seeds for the locked Sep–Nov 2026 window.
  * Majority are timed business-hour appointments; a minority are true all-day
  * or multi-day operations. September is dense; Oct/Nov stay lighter.
+ *
+ * A small subset carries host-selected metadata for the P0.3 WebMCP experiment.
+ * Most events remain metadata-free. Private seed fields are never projected.
  */
 const TIMED_SEEDS: TimedSeed[] = [
   // September 2026 — weekday operations mix
@@ -69,6 +101,11 @@ const TIMED_SEEDS: TimedSeed[] = [
     date: "2026-09-02",
     start: "08:00",
     end: "10:00",
+    location: "North Campus",
+    team: "Facilities",
+    tenantId: "tenant-secret",
+    billingCode: "internal-9281",
+    privateNotes: "Sensitive internal note",
   },
   {
     id: "seed-sep-vendor-onboarding",
@@ -125,6 +162,8 @@ const TIMED_SEEDS: TimedSeed[] = [
     date: "2026-09-11",
     start: "14:00",
     end: "15:00",
+    location: "Warehouse 2",
+    team: "Field Operations",
   },
   {
     id: "seed-sep-project-review",
@@ -132,6 +171,11 @@ const TIMED_SEEDS: TimedSeed[] = [
     date: "2026-09-15",
     start: "10:00",
     end: "11:00",
+    location: "Central Office",
+    attendees: ["Sarah Chen", "Michael Torres"],
+    tenantId: "tenant-secret",
+    billingCode: "internal-9281",
+    privateNotes: "Sensitive internal note",
   },
   {
     id: "seed-sep-compliance-check",
@@ -234,6 +278,8 @@ const TIMED_SEEDS: TimedSeed[] = [
     date: "2026-11-12",
     start: "08:00",
     end: "10:00",
+    location: "North Campus",
+    team: "Facilities",
   },
   {
     id: "seed-nov-closeout",
@@ -245,7 +291,6 @@ const TIMED_SEEDS: TimedSeed[] = [
 ];
 
 const ALL_DAY_SEEDS: AllDaySeed[] = [
-  // True all-day / multi-day operations (exclusive end for multi-day)
   {
     id: "seed-sep-installation",
     title: "Installation — West Facility",
@@ -293,21 +338,29 @@ const ALL_DAY_SEEDS: AllDaySeed[] = [
 ];
 
 export function createSeedEvents(): CalendarEvent[] {
-  const timed: CalendarEvent[] = TIMED_SEEDS.map((spec) => ({
-    id: spec.id,
-    title: spec.title,
-    start: timedInstant(spec.date, spec.start),
-    end: timedInstant(spec.date, spec.end),
-    allDay: false,
-  }));
+  const timed: CalendarEvent[] = TIMED_SEEDS.map((spec) => {
+    const metadata = projectSeedMetadata(spec);
+    return {
+      id: spec.id,
+      title: spec.title,
+      start: timedInstant(spec.date, spec.start),
+      end: timedInstant(spec.date, spec.end),
+      allDay: false,
+      ...(metadata ? { metadata } : {}),
+    };
+  });
 
-  const allDay: CalendarEvent[] = ALL_DAY_SEEDS.map((spec) => ({
-    id: spec.id,
-    title: spec.title,
-    start: spec.start,
-    end: spec.end ?? null,
-    allDay: true,
-  }));
+  const allDay: CalendarEvent[] = ALL_DAY_SEEDS.map((spec) => {
+    const metadata = projectSeedMetadata(spec);
+    return {
+      id: spec.id,
+      title: spec.title,
+      start: spec.start,
+      end: spec.end ?? null,
+      allDay: true,
+      ...(metadata ? { metadata } : {}),
+    };
+  });
 
   return [...timed, ...allDay];
 }
