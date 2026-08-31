@@ -6,7 +6,7 @@ There is no embedded agent/chat UI. The calendar itself is the demo surface; Web
 
 ## What you should see
 
-Opening the app shows a full-page FullCalendar locked to **September–November 2026**, starting in **Month** view on September.
+Opening the app shows a full-page FullCalendar locked to **August–October 2026**, starting in **Month** view on **September** (navigate prev/next for August and October).
 
 The canonical seed set is a mixed operations calendar:
 
@@ -42,7 +42,7 @@ External Agent / WebMCP inspector
         ↓
 useFullCalendarWebMCP
         ↓
-LocalCalendarEventRepository (Sep–Nov 2026 localStorage window)
+LocalCalendarEventRepository (Aug–Oct 2026 localStorage window)
         ↓
 FullCalendar host state
 ```
@@ -51,9 +51,9 @@ Agent mutations and human drag/resize converge on the same authoritative store. 
 
 ## Seed / persistence strategy
 
-- The calendar `validRange` is fixed to September–November 2026 (`initialDate` = Sep 1).
-- FullCalendar `timeZone` is `America/New_York`. Timed seeds use explicit Eastern offsets (EDT −04:00 through Nov 1; EST −05:00 afterward).
-- Persistence uses one window key (`…:v2:2026-sep-nov`). Bumping the key version forces browsers that still hold the old all-day-only dataset onto the new seeds.
+- The calendar `validRange` is fixed to August–October 2026 (`initialDate` = Sep 1; exclusive end `2026-11-01`).
+- FullCalendar `timeZone` is `America/New_York`. Timed seeds use explicit Eastern offsets (EDT −04:00 throughout this window).
+- Persistence uses one window key (`…:v4:2026-aug-oct`). Bumping the key version forces browsers that still hold older datasets onto the new seeds.
 - Invalid localStorage payloads are detected and rewritten with fresh seeds.
 
 ## FullCalendar options of note

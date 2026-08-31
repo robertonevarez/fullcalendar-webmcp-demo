@@ -15,7 +15,8 @@ describe("createSeedEvents", () => {
     (event) => event.end != null && event.end > event.start,
   );
 
-  it("fills September 2026 and covers Oct–Nov within the locked window", () => {
+  it("fills September 2026 and covers Aug–Oct within the locked window", () => {
+    const august = events.filter((event) => event.start.startsWith("2026-08"));
     const september = events.filter((event) =>
       event.start.startsWith("2026-09"),
     );
@@ -24,9 +25,10 @@ describe("createSeedEvents", () => {
       event.start.startsWith("2026-11"),
     );
 
+    expect(august.length).toBeGreaterThanOrEqual(3);
     expect(september.length).toBeGreaterThanOrEqual(18);
     expect(october.length).toBeGreaterThanOrEqual(3);
-    expect(november.length).toBeGreaterThanOrEqual(3);
+    expect(november.length).toBe(0);
   });
 
   it("uses unique stable IDs", () => {
@@ -76,20 +78,21 @@ describe("createSeedEvents", () => {
     }
   });
 
-  it("exports a fixed Sep–Nov 2026 demo window and v3 storage key", () => {
+  it("exports a fixed Aug–Oct 2026 demo window and v4 storage key", () => {
     expect(DEMO_INITIAL_DATE).toBe("2026-09-01");
     expect(DEMO_TIME_ZONE).toBe("America/New_York");
     expect(DEMO_VALID_RANGE).toEqual({
-      start: "2026-09-01",
-      end: "2026-12-01",
+      start: "2026-08-01",
+      end: "2026-11-01",
     });
     expect(DEMO_STORAGE_KEY).toBe(
-      "protocoltooling-demo:calendar-events:v3:2026-sep-nov",
+      "protocoltooling-demo:calendar-events:v4:2026-aug-oct",
     );
   });
 
   it("projects host-selected metadata and omits private seed fields", () => {
     const siteSurvey = events.find((event) => event.id === "seed-sep-site-survey");
+    const sitePrep = events.find((event) => event.id === "seed-aug-site-prep");
     const projectReview = events.find(
       (event) => event.id === "seed-sep-project-review",
     );
@@ -99,6 +102,10 @@ describe("createSeedEvents", () => {
     const kickoff = events.find((event) => event.id === "seed-sep-kickoff");
 
     expect(siteSurvey?.metadata).toEqual({
+      location: "North Campus",
+      team: "Facilities",
+    });
+    expect(sitePrep?.metadata).toEqual({
       location: "North Campus",
       team: "Facilities",
     });
@@ -134,10 +141,12 @@ describe("createSeedEvents", () => {
     }
   });
 
-  it("uses EDT offsets before the Nov DST change and EST after", () => {
+  it("uses EDT offsets for timed seeds in the Aug–Oct window", () => {
     const siteSurvey = timed.find((event) => event.id === "seed-sep-site-survey");
-    const novKickoff = timed.find((event) => event.id === "seed-nov-kickoff");
+    const sitePrep = timed.find((event) => event.id === "seed-aug-site-prep");
+    const octAudit = timed.find((event) => event.id === "seed-oct-audit");
     expect(siteSurvey?.start).toContain("-04:00");
-    expect(novKickoff?.start).toContain("-05:00");
+    expect(sitePrep?.start).toContain("-04:00");
+    expect(octAudit?.start).toContain("-04:00");
   });
 });

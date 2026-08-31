@@ -33,10 +33,10 @@ function memoryStorage(initial: Record<string, string> = {}): Storage {
 describe("storageKeyForMonth", () => {
   it("scopes the persistence key to year-month", () => {
     expect(storageKeyForMonth(new Date(2026, 7, 15))).toBe(
-      "protocoltooling-demo:calendar-events:v3:2026-08",
+      "protocoltooling-demo:calendar-events:v4:2026-08",
     );
     expect(storageKeyForMonth(new Date(2026, 8, 1))).toBe(
-      "protocoltooling-demo:calendar-events:v3:2026-09",
+      "protocoltooling-demo:calendar-events:v4:2026-09",
     );
   });
 });

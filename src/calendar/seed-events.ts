@@ -1,9 +1,9 @@
 import type { CalendarEvent, JsonObject } from "@protocoltooling/fullcalendar";
 
-/** Exclusive end: December 1 opens the day after the last valid November day. */
+/** Exclusive end: November 1 opens the day after the last valid October day. */
 export const DEMO_VALID_RANGE = {
-  start: "2026-09-01",
-  end: "2026-12-01",
+  start: "2026-08-01",
+  end: "2026-11-01",
 } as const;
 
 export const DEMO_INITIAL_DATE = "2026-09-01";
@@ -15,11 +15,11 @@ export const DEMO_INITIAL_DATE = "2026-09-01";
 export const DEMO_TIME_ZONE = "America/New_York";
 
 /**
- * Persistence key for the fixed Sep–Nov 2026 window.
- * v3: optional host-selected WebMCP metadata on a subset of seeds.
+ * Persistence key for the fixed Aug–Oct 2026 window.
+ * v4: navigable August–October (exclusive end 2026-11-01).
  */
 export const DEMO_STORAGE_KEY =
-  "protocoltooling-demo:calendar-events:v3:2026-sep-nov";
+  "protocoltooling-demo:calendar-events:v4:2026-aug-oct";
 
 /** US Eastern DST ends 2026-11-01; Nov 2+ is EST (−05:00). */
 function easternOffset(date: string): "-04:00" | "-05:00" {
@@ -79,14 +79,46 @@ export function projectSeedMetadata(seed: {
 }
 
 /**
- * Deterministic enterprise seeds for the locked Sep–Nov 2026 window.
+ * Deterministic enterprise seeds for the locked Aug–Oct 2026 window.
  * Majority are timed business-hour appointments; a minority are true all-day
- * or multi-day operations. September is dense; Oct/Nov stay lighter.
+ * or multi-day operations. September is dense; Aug/Oct stay lighter.
  *
  * A small subset carries host-selected metadata for the P0.3 WebMCP experiment.
  * Most events remain metadata-free. Private seed fields are never projected.
  */
 const TIMED_SEEDS: TimedSeed[] = [
+  // August 2026 — lighter timed coverage
+  {
+    id: "seed-aug-planning",
+    title: "August Planning — Ops Hub",
+    date: "2026-08-05",
+    start: "09:00",
+    end: "10:30",
+  },
+  {
+    id: "seed-aug-site-prep",
+    title: "Site Prep — North Campus",
+    date: "2026-08-12",
+    start: "08:00",
+    end: "10:00",
+    location: "North Campus",
+    team: "Facilities",
+  },
+  {
+    id: "seed-aug-vendor-review",
+    title: "Vendor Review — Procurement",
+    date: "2026-08-20",
+    start: "13:00",
+    end: "14:30",
+  },
+  {
+    id: "seed-aug-readiness",
+    title: "Q3 Readiness — HQ Boardroom",
+    date: "2026-08-27",
+    start: "09:00",
+    end: "10:30",
+  },
+
   // September 2026 — weekday operations mix
   {
     id: "seed-sep-kickoff",
@@ -263,31 +295,6 @@ const TIMED_SEEDS: TimedSeed[] = [
     start: "10:00",
     end: "11:00",
   },
-
-  // November 2026 — lighter timed coverage (EST)
-  {
-    id: "seed-nov-kickoff",
-    title: "November Kickoff — HQ Boardroom",
-    date: "2026-11-02",
-    start: "09:00",
-    end: "10:30",
-  },
-  {
-    id: "seed-nov-inspection",
-    title: "Winter Readiness — North Campus",
-    date: "2026-11-12",
-    start: "08:00",
-    end: "10:00",
-    location: "North Campus",
-    team: "Facilities",
-  },
-  {
-    id: "seed-nov-closeout",
-    title: "Year-End Closeout Prep — Finance",
-    date: "2026-11-25",
-    start: "14:00",
-    end: "16:00",
-  },
 ];
 
 const ALL_DAY_SEEDS: AllDaySeed[] = [
@@ -325,15 +332,9 @@ const ALL_DAY_SEEDS: AllDaySeed[] = [
     start: "2026-10-29",
   },
   {
-    id: "seed-nov-cutover",
-    title: "System Cutover — Operations Center",
-    start: "2026-11-18",
-    end: "2026-11-20",
-  },
-  {
-    id: "seed-nov-quarter-close",
-    title: "Quarter Close",
-    start: "2026-11-30",
+    id: "seed-aug-inventory",
+    title: "Inventory Prep — Warehouse 1",
+    start: "2026-08-14",
   },
 ];
 
