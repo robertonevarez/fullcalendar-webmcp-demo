@@ -6,7 +6,7 @@
 - The canonical seed set is mixed timed / all-day / multi-day (persistence key `…:v4:2026-aug-oct`); FullCalendar uses `America/New_York` with native `eventTimeFormat` + `displayEventEnd`.
 - Phase D4 is visual-only: FullCalendar Pulse theme + palette/CSS overrides in `src/calendar/calendar-theme.css`. Do not change WebMCP, seeds, persistence, or validRange for design work.
 - Phase D4.1 aligns Inter typography and Blume-inspired surface tokens with Protocol Tooling, plus ID-derived presentation-only event colors in `src/calendar/event-palette.ts`.
-- **Experiment (unreleased):** a subset of seeds projects host-selected `metadata` (location / attendees / team) for WebMCP agents. Private seed fields (`tenantId`, `billingCode`, `privateNotes`) are never written into `CalendarEvent.metadata`. Persistence key is `…:v4:2026-aug-oct`. No calendar UI chrome was added for metadata.
+- **Experiment (unreleased):** a subset of seeds projects host-selected `metadata` (location / attendees / team) for WebMCP agents. Private seed fields (`tenantId`, `billingCode`, `privateNotes`) are never written into `CalendarEvent.metadata`. Persistence key is `…:v4:2026-aug-oct`. Companion package is vendored at `vendor/protocoltooling-fullcalendar-0.1.1.tgz` (refresh with `npm run pack:experiment-dep`). No calendar UI chrome was added for metadata.
 - Calendar UI lives in `src/calendar/CalendarApp.tsx`.
 - Seed events and demo window constants live in `src/calendar/seed-events.ts`.
 - Persistence adapter lives in `src/calendar/local-calendar-repository.ts`.
