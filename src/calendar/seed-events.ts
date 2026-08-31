@@ -8,87 +8,249 @@ export const DEMO_VALID_RANGE = {
 
 export const DEMO_INITIAL_DATE = "2026-09-01";
 
-/** Single persistence key for the fixed Sep–Nov 2026 demo window. */
-export const DEMO_STORAGE_KEY =
-  "protocoltooling-demo:calendar-events:v1:2026-sep-nov";
+/**
+ * Demo wall-clock timezone for FullCalendar and seed generation.
+ * Timed seeds use explicit offsets matching America/New_York (EDT/EST).
+ */
+export const DEMO_TIME_ZONE = "America/New_York";
 
-type SeedSpec = {
+/**
+ * Persistence key for the fixed Sep–Nov 2026 window.
+ * v2: mixed timed / all-day / multi-day canonical seeds (replaces all-day-only v1).
+ */
+export const DEMO_STORAGE_KEY =
+  "protocoltooling-demo:calendar-events:v2:2026-sep-nov";
+
+/** US Eastern DST ends 2026-11-01; Nov 2+ is EST (−05:00). */
+function easternOffset(date: string): "-04:00" | "-05:00" {
+  return date >= "2026-11-02" ? "-05:00" : "-04:00";
+}
+
+function timedInstant(date: string, hhmm: string): string {
+  return `${date}T${hhmm}:00${easternOffset(date)}`;
+}
+
+type TimedSeed = {
   id: string;
   title: string;
-  /** Inclusive start as YYYY-MM-DD. */
+  date: string;
+  /** Local wall-clock start HH:MM in America/New_York. */
   start: string;
-  /** Exclusive end for multi-day all-day events. */
+  /** Local wall-clock exclusive end HH:MM in America/New_York. */
+  end: string;
+};
+
+type AllDaySeed = {
+  id: string;
+  title: string;
+  /** Inclusive start YYYY-MM-DD. */
+  start: string;
+  /** Exclusive end YYYY-MM-DD for multi-day spans; omit for single day. */
   end?: string;
 };
 
 /**
  * Deterministic enterprise seeds for the locked Sep–Nov 2026 window.
- * September is densely filled; October and November get lighter coverage.
+ * Majority are timed business-hour appointments; a minority are true all-day
+ * or multi-day operations. September is dense; Oct/Nov stay lighter.
  */
-const SEED_SPECS: SeedSpec[] = [
-  // September 2026 — fill the month
-  { id: "seed-sep-kickoff", title: "Q4 Kickoff — HQ Boardroom", start: "2026-09-01" },
-  { id: "seed-sep-site-survey", title: "Site Survey — North Campus", start: "2026-09-02" },
+const TIMED_SEEDS: TimedSeed[] = [
+  // September 2026 — weekday operations mix
+  {
+    id: "seed-sep-kickoff",
+    title: "Q4 Kickoff — HQ Boardroom",
+    date: "2026-09-01",
+    start: "09:00",
+    end: "10:30",
+  },
+  {
+    id: "seed-sep-site-survey",
+    title: "Site Survey — North Campus",
+    date: "2026-09-02",
+    start: "08:00",
+    end: "10:00",
+  },
   {
     id: "seed-sep-vendor-onboarding",
     title: "Vendor Onboarding — Procurement",
-    start: "2026-09-03",
+    date: "2026-09-03",
+    start: "09:30",
+    end: "11:00",
   },
   {
     id: "seed-sep-equipment-inspection",
     title: "Equipment Inspection — Building 4",
-    start: "2026-09-04",
+    date: "2026-09-04",
+    start: "09:00",
+    end: "10:30",
   },
   {
     id: "seed-sep-network-audit",
     title: "Network Audit — Data Center A",
-    start: "2026-09-05",
+    date: "2026-09-04",
+    start: "13:00",
+    end: "15:30",
   },
+  {
+    id: "seed-sep-safety-briefing",
+    title: "Safety Briefing — Plant Floor",
+    date: "2026-09-08",
+    start: "08:30",
+    end: "09:00",
+  },
+  {
+    id: "seed-sep-maintenance",
+    title: "Maintenance — South Plant",
+    date: "2026-09-09",
+    start: "13:00",
+    end: "15:30",
+  },
+  {
+    id: "seed-sep-capacity-planning",
+    title: "Capacity Planning — Ops Hub",
+    date: "2026-09-10",
+    start: "11:00",
+    end: "12:00",
+  },
+  {
+    id: "seed-sep-client-walkthrough",
+    title: "Client Walkthrough — Building 2",
+    date: "2026-09-11",
+    start: "09:00",
+    end: "10:30",
+  },
+  {
+    id: "seed-sep-service-visit",
+    title: "Service Visit — Warehouse 2",
+    date: "2026-09-11",
+    start: "14:00",
+    end: "15:00",
+  },
+  {
+    id: "seed-sep-project-review",
+    title: "Project Review — Central Office",
+    date: "2026-09-15",
+    start: "10:00",
+    end: "11:00",
+  },
+  {
+    id: "seed-sep-compliance-check",
+    title: "Compliance Check — Records Room",
+    date: "2026-09-15",
+    start: "14:00",
+    end: "15:00",
+  },
+  {
+    id: "seed-sep-safety-inspection",
+    title: "Safety Inspection — East Facility",
+    date: "2026-09-16",
+    start: "08:00",
+    end: "10:00",
+  },
+  {
+    id: "seed-sep-facility-assessment",
+    title: "Facility Assessment — Building 7",
+    date: "2026-09-17",
+    start: "09:30",
+    end: "11:00",
+  },
+  {
+    id: "seed-sep-staff-training",
+    title: "Staff Training — Training Lab",
+    date: "2026-09-18",
+    start: "09:00",
+    end: "12:00",
+  },
+  {
+    id: "seed-sep-deployment-review",
+    title: "Deployment Review — Regional Office",
+    date: "2026-09-22",
+    start: "13:00",
+    end: "14:30",
+  },
+  {
+    id: "seed-sep-procurement-sync",
+    title: "Procurement Sync — Central Office",
+    date: "2026-09-23",
+    start: "08:30",
+    end: "09:30",
+  },
+  {
+    id: "seed-sep-ops-standup",
+    title: "Ops Standup — Ops Hub",
+    date: "2026-09-24",
+    start: "08:00",
+    end: "08:30",
+  },
+  {
+    id: "seed-sep-deployment",
+    title: "Deployment — Regional Office",
+    date: "2026-09-29",
+    start: "09:00",
+    end: "11:00",
+  },
+  {
+    id: "seed-sep-month-close",
+    title: "Month Close Review — Finance",
+    date: "2026-09-30",
+    start: "15:30",
+    end: "16:30",
+  },
+
+  // October 2026 — lighter timed coverage
+  {
+    id: "seed-oct-planning",
+    title: "October Planning — Ops Hub",
+    date: "2026-10-05",
+    start: "09:00",
+    end: "10:30",
+  },
+  {
+    id: "seed-oct-audit",
+    title: "Quarterly Audit — Central Office",
+    date: "2026-10-22",
+    start: "13:00",
+    end: "15:00",
+  },
+  {
+    id: "seed-oct-vendor-checkin",
+    title: "Vendor Check-In — Procurement",
+    date: "2026-10-28",
+    start: "10:00",
+    end: "11:00",
+  },
+
+  // November 2026 — lighter timed coverage (EST)
+  {
+    id: "seed-nov-kickoff",
+    title: "November Kickoff — HQ Boardroom",
+    date: "2026-11-02",
+    start: "09:00",
+    end: "10:30",
+  },
+  {
+    id: "seed-nov-inspection",
+    title: "Winter Readiness — North Campus",
+    date: "2026-11-12",
+    start: "08:00",
+    end: "10:00",
+  },
+  {
+    id: "seed-nov-closeout",
+    title: "Year-End Closeout Prep — Finance",
+    date: "2026-11-25",
+    start: "14:00",
+    end: "16:00",
+  },
+];
+
+const ALL_DAY_SEEDS: AllDaySeed[] = [
+  // True all-day / multi-day operations (exclusive end for multi-day)
   {
     id: "seed-sep-installation",
     title: "Installation — West Facility",
     start: "2026-09-08",
     end: "2026-09-10",
-  },
-  {
-    id: "seed-sep-safety-briefing",
-    title: "Safety Briefing — Plant Floor",
-    start: "2026-09-09",
-  },
-  {
-    id: "seed-sep-maintenance",
-    title: "Maintenance — South Plant",
-    start: "2026-09-11",
-  },
-  {
-    id: "seed-sep-capacity-planning",
-    title: "Capacity Planning — Ops Hub",
-    start: "2026-09-12",
-  },
-  {
-    id: "seed-sep-project-review",
-    title: "Project Review — Central Office",
-    start: "2026-09-15",
-  },
-  {
-    id: "seed-sep-client-walkthrough",
-    title: "Client Walkthrough — Building 2",
-    start: "2026-09-16",
-  },
-  {
-    id: "seed-sep-service-visit",
-    title: "Service Visit — Warehouse 2",
-    start: "2026-09-17",
-  },
-  {
-    id: "seed-sep-compliance-check",
-    title: "Compliance Check — Records Room",
-    start: "2026-09-18",
-  },
-  {
-    id: "seed-sep-safety-inspection",
-    title: "Safety Inspection — East Facility",
-    start: "2026-09-19",
   },
   {
     id: "seed-sep-system-upgrade",
@@ -97,36 +259,14 @@ const SEED_SPECS: SeedSpec[] = [
     end: "2026-09-24",
   },
   {
-    id: "seed-sep-staff-training",
-    title: "Staff Training — Training Lab",
-    start: "2026-09-23",
-  },
-  {
-    id: "seed-sep-facility-assessment",
-    title: "Facility Assessment — Building 7",
+    id: "seed-sep-inventory-count",
+    title: "Inventory Count — Warehouse 1",
     start: "2026-09-25",
   },
   {
-    id: "seed-sep-inventory-count",
-    title: "Inventory Count — Warehouse 1",
-    start: "2026-09-26",
-  },
-  {
-    id: "seed-sep-deployment",
-    title: "Deployment — Regional Office",
-    start: "2026-09-29",
-  },
-  {
-    id: "seed-sep-month-close",
-    title: "Month Close Review — Finance",
-    start: "2026-09-30",
-  },
-
-  // October 2026 — lighter coverage
-  {
-    id: "seed-oct-planning",
-    title: "October Planning — Ops Hub",
-    start: "2026-10-05",
+    id: "seed-sep-planning-day",
+    title: "Company Planning Day",
+    start: "2026-09-28",
   },
   {
     id: "seed-oct-retrofit",
@@ -135,26 +275,9 @@ const SEED_SPECS: SeedSpec[] = [
     end: "2026-10-16",
   },
   {
-    id: "seed-oct-audit",
-    title: "Quarterly Audit — Central Office",
-    start: "2026-10-22",
-  },
-  {
     id: "seed-oct-drill",
     title: "Emergency Drill — All Sites",
-    start: "2026-10-28",
-  },
-
-  // November 2026 — lighter coverage
-  {
-    id: "seed-nov-kickoff",
-    title: "November Kickoff — HQ Boardroom",
-    start: "2026-11-02",
-  },
-  {
-    id: "seed-nov-inspection",
-    title: "Winter Readiness — North Campus",
-    start: "2026-11-12",
+    start: "2026-10-29",
   },
   {
     id: "seed-nov-cutover",
@@ -163,18 +286,28 @@ const SEED_SPECS: SeedSpec[] = [
     end: "2026-11-20",
   },
   {
-    id: "seed-nov-closeout",
-    title: "Year-End Closeout Prep — Finance",
-    start: "2026-11-25",
+    id: "seed-nov-quarter-close",
+    title: "Quarter Close",
+    start: "2026-11-30",
   },
 ];
 
 export function createSeedEvents(): CalendarEvent[] {
-  return SEED_SPECS.map((spec) => ({
+  const timed: CalendarEvent[] = TIMED_SEEDS.map((spec) => ({
+    id: spec.id,
+    title: spec.title,
+    start: timedInstant(spec.date, spec.start),
+    end: timedInstant(spec.date, spec.end),
+    allDay: false,
+  }));
+
+  const allDay: CalendarEvent[] = ALL_DAY_SEEDS.map((spec) => ({
     id: spec.id,
     title: spec.title,
     start: spec.start,
     end: spec.end ?? null,
     allDay: true,
   }));
+
+  return [...timed, ...allDay];
 }

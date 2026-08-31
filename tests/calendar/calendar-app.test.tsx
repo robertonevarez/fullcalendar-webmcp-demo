@@ -3,14 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "temporal-polyfill/global";
 import type { CalendarEvent } from "@protocoltooling/fullcalendar";
 
-const onEventsChangedRef: { current: (() => unknown | Promise<unknown>) | null } = {
+const onEventsChangedRef: {
+  current: (() => unknown | Promise<unknown>) | null;
+} = {
   current: null,
 };
 
 vi.mock("@protocoltooling/fullcalendar", async () => {
-  const actual = await vi.importActual<typeof import("@protocoltooling/fullcalendar")>(
-    "@protocoltooling/fullcalendar",
-  );
+  const actual = await vi.importActual<
+    typeof import("@protocoltooling/fullcalendar")
+  >("@protocoltooling/fullcalendar");
   return {
     ...actual,
     useFullCalendarWebMCP: (options: {
@@ -83,23 +85,50 @@ describe("CalendarApp D1 wiring", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Site Survey — North Campus")).toBeInTheDocument();
-      expect(screen.getByText("Deployment — Regional Office")).toBeInTheDocument();
+      expect(
+        screen.getAllByText("Site Survey — North Campus").length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText("Deployment — Regional Office").length,
+      ).toBeGreaterThan(0);
     });
   });
 
-  it("refreshes from repository after an agent-style mutation via onEventsChanged", async () => {
+  it("passes a representative timed event to FullCalendar with start/end", async () => {
     render(<CalendarApp repository={repository} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Site Survey — North Campus")).toBeInTheDocument();
+      expect(
+        screen.getAllByText("Equipment Inspection — Building 4").length,
+      ).toBeGreaterThan(0);
+    });
+
+    const event = (await repository.get("seed-sep-equipment-inspection"))!;
+    expect(event.allDay).toBe(false);
+    expect(event.start).toBe("2026-09-04T09:00:00-04:00");
+    expect(event.end).toBe("2026-09-04T10:30:00-04:00");
+
+    // Native eventTimeFormat + displayEventEnd should expose readable time text.
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/9:00\s*AM/i);
+      expect(document.body.textContent).toMatch(/10:30\s*AM/i);
+    });
+  });
+
+  it("refreshes from repository after an agent timed mutation via onEventsChanged", async () => {
+    render(<CalendarApp repository={repository} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText("Site Survey — North Campus").length,
+      ).toBeGreaterThan(0);
     });
 
     await repository.update("seed-sep-site-survey", {
       title: "Site Survey — Relocated Campus",
-      start: "2026-09-20",
-      end: null,
-      allDay: true,
+      start: "2026-09-20T14:00:00-04:00",
+      end: "2026-09-20T15:30:00-04:00",
+      allDay: false,
     });
 
     expect(onEventsChangedRef.current).toBeTypeOf("function");
@@ -107,26 +136,36 @@ describe("CalendarApp D1 wiring", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Site Survey — Relocated Campus"),
-      ).toBeInTheDocument();
+        screen.getAllByText("Site Survey — Relocated Campus").length,
+      ).toBeGreaterThan(0);
     });
+
+    const refreshed = await repository.get("seed-sep-site-survey");
+    expect(refreshed?.start).toBe("2026-09-20T18:00:00.000Z");
+    expect(refreshed?.end).toBe("2026-09-20T19:30:00.000Z");
   });
 
-  it("honors ?reset=1 by restoring seed events and stripping the query", async () => {
+  it("honors ?reset=1 by restoring timed seeds and stripping the query", async () => {
     await repository.update("seed-sep-site-survey", {
       title: "Site Survey — Mutated",
-      start: "2026-09-28",
-      end: null,
-      allDay: true,
+      start: "2026-09-28T09:00:00-04:00",
+      end: "2026-09-28T10:00:00-04:00",
+      allDay: false,
     } satisfies Partial<CalendarEvent>);
 
     window.history.replaceState({}, "", "/?reset=1");
     render(<CalendarApp repository={repository} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Site Survey — North Campus")).toBeInTheDocument();
+      expect(
+        screen.getAllByText("Site Survey — North Campus").length,
+      ).toBeGreaterThan(0);
     });
     expect(screen.queryByText("Site Survey — Mutated")).not.toBeInTheDocument();
     expect(window.location.search).toBe("");
+
+    const restored = await repository.get("seed-sep-site-survey");
+    expect(restored?.start).toBe("2026-09-02T08:00:00-04:00");
+    expect(restored?.allDay).toBe(false);
   });
 });
