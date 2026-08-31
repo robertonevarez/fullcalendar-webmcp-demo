@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { persistHumanMove } from "./human-move";
 import { LocalCalendarEventRepository } from "./local-calendar-repository";
+import { paletteForEventId } from "./event-palette";
 import { shouldResetFromSearch, stripResetParam } from "./reset";
 import {
   createSeedEvents,
@@ -105,13 +106,19 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
           editable
-          events={events.map((event) => ({
-            id: event.id,
-            title: event.title,
-            start: event.start,
-            end: event.end ?? undefined,
-            allDay: event.allDay,
-          }))}
+          events={events.map((event) => {
+            const swatch = paletteForEventId(event.id);
+            return {
+              id: event.id,
+              title: event.title,
+              start: event.start,
+              end: event.end ?? undefined,
+              allDay: event.allDay,
+              // Presentation-only FullCalendar EventUi inputs — not persisted.
+              color: swatch.color,
+              contrastColor: swatch.contrastColor,
+            };
+          })}
           height="100%"
           dayCellDidMount={(info) => {
             info.el.dataset.ptDay = info.isOther ? "other" : "current";

@@ -1,88 +1,76 @@
 /*
- * Phase D4 — FullCalendar visual refinement
+ * Phase D4 / D4.1 — FullCalendar visual refinement
  *
  * Prefer documented FullCalendar palette CSS variables, then targeted
- * overrides scoped under .calendar-surface. Avoid depending on hashed
- * theme utility class names.
+ * overrides scoped under .calendar-surface. Event colors derive from
+ * presentation-only ID → palette mapping (see event-palette.ts).
  */
 
 :root {
-  --pt-calendar-text: #111827;
-  --pt-calendar-text-muted: #6b7280;
-  --pt-calendar-text-faint: #9ca3af;
-  --pt-calendar-control-bg: #ffffff;
-  --pt-calendar-control-hover: #f3f4f6;
-  --pt-calendar-control-active: #ebeef2;
-  --pt-calendar-event-bg: #e8eef7;
-  --pt-calendar-event-fg: #1e3a5f;
-  --pt-calendar-focus: #3b82f680;
-  --pt-calendar-transition: 150ms ease;
-
   /*
-   * Pulse palette overrides (documented FullCalendar color-palette mechanism).
-   * Soften stock Pulse toward restrained enterprise neutrals.
+   * Pulse palette overrides aligned to Protocol Tooling / Blume light tokens.
    */
-  --fc-pulse-background: #ffffff;
-  --fc-pulse-border: #f0f1f3;
-  --fc-pulse-strong-border: #e8eaee;
-  --fc-pulse-foreground: var(--pt-calendar-text);
-  --fc-pulse-muted-foreground: var(--pt-calendar-text-muted);
-  --fc-pulse-faint-foreground: var(--pt-calendar-text-faint);
-  --fc-pulse-faint: #00000006;
-  --fc-pulse-muted: #0000000d;
-  --fc-pulse-strong: #00000014;
+  --fc-pulse-background: var(--pt-background);
+  --fc-pulse-border: var(--pt-border);
+  --fc-pulse-strong-border: oklch(88% 0.006 260 / 0.9);
+  --fc-pulse-foreground: var(--pt-foreground);
+  --fc-pulse-muted-foreground: var(--pt-muted-foreground);
+  --fc-pulse-faint-foreground: oklch(62% 0 0);
+  --fc-pulse-faint: oklch(0% 0 0 / 0.03);
+  --fc-pulse-muted: oklch(0% 0 0 / 0.05);
+  --fc-pulse-strong: oklch(0% 0 0 / 0.08);
 
   /* Secondary toolbar buttons (prev / next / today) */
-  --fc-pulse-secondary: var(--pt-calendar-control-bg);
-  --fc-pulse-secondary-over: var(--pt-calendar-control-hover);
-  --fc-pulse-secondary-down: var(--pt-calendar-control-active);
-  --fc-pulse-secondary-foreground: var(--pt-calendar-text);
-  --fc-pulse-secondary-icon: #4b5563;
-  --fc-pulse-secondary-icon-over: var(--pt-calendar-text);
+  --fc-pulse-secondary: var(--pt-background);
+  --fc-pulse-secondary-over: var(--pt-muted);
+  --fc-pulse-secondary-down: oklch(94% 0 0);
+  --fc-pulse-secondary-foreground: var(--pt-foreground);
+  --fc-pulse-secondary-icon: oklch(45% 0 0);
+  --fc-pulse-secondary-icon-over: var(--pt-foreground);
 
-  /* Segmented Month / Week / Day — track uses unselected; active pill uses selected */
-  --fc-pulse-unselected: #f1f2f4;
-  --fc-pulse-unselected-foreground: var(--pt-calendar-text-muted);
-  --fc-pulse-selected: #ffffff;
-  --fc-pulse-selected-foreground: var(--pt-calendar-text);
+  /* Segmented Month / Week / Day — track = muted; active pill = surface */
+  --fc-pulse-unselected: var(--pt-muted);
+  --fc-pulse-unselected-foreground: var(--pt-muted-foreground);
+  --fc-pulse-selected: var(--pt-background);
+  --fc-pulse-selected-foreground: var(--pt-foreground);
 
-  /* Events — tinted enterprise blue, dark readable title */
-  --fc-pulse-event: var(--pt-calendar-event-bg);
-  --fc-pulse-event-contrast: var(--pt-calendar-event-fg);
-  --fc-pulse-primary: #3d6ea5;
-  --fc-pulse-primary-over: #4a7ab0;
-  --fc-pulse-primary-down: #355f8f;
-  --fc-pulse-primary-foreground: #ffffff;
-  --fc-pulse-tertiary: #3d6ea5;
-  --fc-pulse-tertiary-over: #4a7ab0;
-  --fc-pulse-tertiary-down: #355f8f;
-  --fc-pulse-tertiary-foreground: #ffffff;
+  /* Default event fallback (per-event color/contrastColor override this) */
+  --fc-pulse-event: oklch(95% 0.02 250);
+  --fc-pulse-event-contrast: oklch(34% 0.06 250);
+  --fc-pulse-primary: var(--pt-accent);
+  --fc-pulse-primary-over: oklch(58% 0.16 250);
+  --fc-pulse-primary-down: oklch(52% 0.15 250);
+  --fc-pulse-primary-foreground: oklch(100% 0 0);
+  --fc-pulse-tertiary: var(--pt-accent);
+  --fc-pulse-tertiary-over: oklch(58% 0.16 250);
+  --fc-pulse-tertiary-down: oklch(52% 0.15 250);
+  --fc-pulse-tertiary-foreground: oklch(100% 0 0);
 }
 
 /* Cohesive calendar frame — FullCalendar v7 internalView root (classNames.internalView) */
 .calendar-surface .fc-LQ {
-  border-top-left-radius: 10px !important;
-  border-top-right-radius: 10px !important;
-  border-bottom-left-radius: 10px !important;
-  border-bottom-right-radius: 10px !important;
+  border-top-left-radius: var(--pt-radius) !important;
+  border-top-right-radius: var(--pt-radius) !important;
+  border-bottom-left-radius: var(--pt-radius) !important;
+  border-bottom-right-radius: var(--pt-radius) !important;
   overflow: hidden;
 }
 
 /* Day numbers: current month neutral; outside month noticeably muted */
 .calendar-surface [data-pt-day="current"] > div:first-child > div {
-  color: var(--pt-calendar-text);
+  color: var(--pt-foreground);
 }
 
 .calendar-surface [data-pt-day="other"] > div:first-child > div {
-  color: var(--pt-calendar-text-faint);
+  color: var(--fc-pulse-faint-foreground);
 }
 
-/* Toolbar title hierarchy */
+/* Toolbar title hierarchy — medium weight like Protocol Tooling headings */
 .calendar-surface [role="heading"] {
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.02em;
-  color: var(--pt-calendar-text);
+  color: var(--pt-foreground);
   line-height: 1.25;
 }
 
@@ -92,16 +80,17 @@
   font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: -0.01em;
+  border-radius: calc(var(--pt-radius) - 2px);
   transition:
-    background-color var(--pt-calendar-transition),
-    border-color var(--pt-calendar-transition),
-    color var(--pt-calendar-transition),
-    box-shadow var(--pt-calendar-transition);
+    background-color var(--pt-transition),
+    border-color var(--pt-transition),
+    color var(--pt-transition),
+    box-shadow var(--pt-transition);
 }
 
 .calendar-surface button:focus-visible,
 .calendar-surface [role="tab"]:focus-visible {
-  outline: 2px solid var(--pt-calendar-focus);
+  outline: 2px solid var(--pt-focus);
   outline-offset: 2px;
 }
 
@@ -110,7 +99,7 @@
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: var(--pt-calendar-text-muted);
+  color: var(--pt-muted-foreground);
 }
 
 /* Day numbers — compact and quiet */
@@ -122,13 +111,14 @@
 /*
  * Event interaction polish.
  * FullCalendar v7 sets --fc-event-color / --fc-event-contrast-color on event
- * elements (documented CSS variables). Target those rather than theme hashes.
+ * elements from each event's color / contrastColor inputs.
  */
 .calendar-surface [style*="--fc-event-color"] {
-  border-radius: 4px;
+  border-radius: calc(var(--pt-radius) - 4px);
   transition:
-    filter var(--pt-calendar-transition),
-    opacity var(--pt-calendar-transition);
+    background-color var(--pt-transition),
+    filter var(--pt-transition),
+    opacity var(--pt-transition);
 }
 
 @media (hover: hover) {
