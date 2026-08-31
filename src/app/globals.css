@@ -8,17 +8,59 @@ body {
   height: 100%;
 }
 
+/*
+ * Protocol Tooling / Blume light-mode tokens (inspected from protocoltooling.com).
+ * Translated into the demo — not a wholesale Blume CSS copy.
+ */
+:root {
+  --pt-background: oklch(100% 0 0);
+  --pt-page: oklch(96.5% 0 0);
+  --pt-foreground: oklch(14.5% 0 0);
+  --pt-muted: oklch(96.5% 0 0);
+  --pt-muted-foreground: oklch(54% 0 0);
+  --pt-border: oklch(88% 0.006 260 / 0.72);
+  --pt-radius: 0.5rem;
+  --pt-accent: oklch(62% 0.16 250);
+  --pt-focus: oklch(62% 0.16 250 / 0.45);
+  --pt-transition: 150ms ease;
+
+  /*
+   * Inter OpenType features matching protocoltooling/theme.css
+   * (https://rsms.me/inter/#features). Requires InterVariable (local),
+   * not next/font/google Inter — Google’s build omits cv11/ss0x glyphs.
+   * liga + calt: recommended defaults.
+   * ss01: alternate (open) digits.
+   * ss03: round quotes & commas.
+   * cv11: single-story a.
+   */
+  font-optical-sizing: auto;
+  font-feature-settings: "liga" 1, "calt" 1, "ss01" 1, "ss03" 1, "cv11" 1;
+}
+
 body {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 16px;
-  background: #fff;
-  color: #111;
-  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  padding: 20px 24px;
+  background: var(--pt-page);
+  color: var(--pt-foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .calendar-surface {
-  height: calc(100vh - 32px);
-  height: calc(100dvh - 32px);
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
   min-height: 480px;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 12px;
+  }
+
+  .calendar-surface {
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+  }
 }

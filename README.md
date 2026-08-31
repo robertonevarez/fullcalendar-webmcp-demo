@@ -2,7 +2,7 @@
 
 A minimal enterprise FullCalendar host used to demonstrate the FullCalendar WebMCP integration published by [Protocol Tooling](https://protocoltooling.com).
 
-This branch includes **Phase D1.1** hardening on top of D1: durable local persistence, corrupt-storage self-repair, month-scoped demo state, and a hidden `?reset=1` recovery path. There is still no agent/chat UI — WebMCP remains invisible infrastructure.
+This branch includes **Phase D4.1** on top of D4: Inter typography and Blume-aligned surface tokens matching Protocol Tooling, plus a restrained deterministic event palette for same-day differentiation. Behavior, seeds, persistence, and WebMCP tools are unchanged. There is still no agent/chat UI — WebMCP remains invisible infrastructure.
 
 ## What you should see
 

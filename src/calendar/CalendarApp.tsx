@@ -6,10 +6,10 @@ import FullCalendar, {
   type EventDropInfo,
   type EventResizeDoneInfo,
 } from "@fullcalendar/react";
-import classicTheme from "@fullcalendar/react/themes/classic";
 import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
+import pulseTheme from "@fullcalendar/react/themes/pulse";
 import {
   useFullCalendarWebMCP,
   type CalendarEvent,
@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { persistHumanMove } from "./human-move";
 import { LocalCalendarEventRepository } from "./local-calendar-repository";
+import { paletteForEventId } from "./event-palette";
 import { shouldResetFromSearch, stripResetParam } from "./reset";
 import {
   createSeedEvents,
@@ -26,8 +27,9 @@ import {
 } from "./seed-events";
 
 import "@fullcalendar/react/skeleton.css";
-import "@fullcalendar/react/themes/classic/theme.css";
-import "@fullcalendar/react/themes/classic/palette.css";
+import "@fullcalendar/react/themes/pulse/theme.css";
+import "@fullcalendar/react/themes/pulse/palettes/blue.css";
+import "./calendar-theme.css";
 
 function subscribe() {
   return () => {};
@@ -94,7 +96,7 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
       {isClient ? (
         <FullCalendar
           ref={calendarRef}
-          plugins={[classicTheme, dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[pulseTheme, dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           initialDate={DEMO_INITIAL_DATE}
           validRange={DEMO_VALID_RANGE}
@@ -104,14 +106,23 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
           editable
-          events={events.map((event) => ({
-            id: event.id,
-            title: event.title,
-            start: event.start,
-            end: event.end ?? undefined,
-            allDay: event.allDay,
-          }))}
+          events={events.map((event) => {
+            const swatch = paletteForEventId(event.id);
+            return {
+              id: event.id,
+              title: event.title,
+              start: event.start,
+              end: event.end ?? undefined,
+              allDay: event.allDay,
+              // Presentation-only FullCalendar EventUi inputs — not persisted.
+              color: swatch.color,
+              contrastColor: swatch.contrastColor,
+            };
+          })}
           height="100%"
+          dayCellDidMount={(info) => {
+            info.el.dataset.ptDay = info.isOther ? "other" : "current";
+          }}
           eventDrop={(info) => void onHumanMove(info)}
           eventResize={(info) => void onHumanMove(info)}
         />
