@@ -6,9 +6,9 @@ import type {
   UpdateCalendarEventInput,
 } from "@protocoltooling/fullcalendar";
 
-const STORAGE_KEY = "protocoltooling-demo:calendar-events:v1";
+const STORAGE_KEY_PREFIX = "protocoltooling-demo:calendar-events:v1";
 
-type StorageLike = Pick<Storage, "getItem" | "setItem">;
+type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 type RepositoryOptions = {
   storage?: StorageLike;
@@ -72,6 +72,37 @@ function normalizeEvent(
   };
 }
 
+export function storageKeyForMonth(anchor: Date = new Date()): string {
+  const year = anchor.getFullYear();
+  const month = String(anchor.getMonth() + 1).padStart(2, "0");
+  return `${STORAGE_KEY_PREFIX}:${year}-${month}`;
+}
+
+export function isCalendarEvent(value: unknown): value is CalendarEvent {
+  if (!value || typeof value !== "object") return false;
+  const event = value as Record<string, unknown>;
+  return (
+    typeof event.id === "string" &&
+    event.id.length > 0 &&
+    typeof event.title === "string" &&
+    typeof event.start === "string" &&
+    (event.end === null || typeof event.end === "string") &&
+    typeof event.allDay === "boolean"
+  );
+}
+
+export function parseStoredEvents(raw: string): CalendarEvent[] | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.every(isCalendarEvent)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Smallest browser-local CalendarEventRepository for the demo host.
  * localStorage is authoritative for both human and agent mutations.
@@ -85,7 +116,7 @@ export class LocalCalendarEventRepository implements CalendarEventRepository {
 
   constructor(options: RepositoryOptions = {}) {
     this.storageOverride = options.storage;
-    this.storageKey = options.storageKey ?? STORAGE_KEY;
+    this.storageKey = options.storageKey ?? storageKeyForMonth();
     this.seedEvents = clone(options.seedEvents ?? []);
     this.createId = options.createId ?? (() => crypto.randomUUID());
   }
@@ -170,6 +201,13 @@ export class LocalCalendarEventRepository implements CalendarEventRepository {
     this.write(remaining);
   }
 
+  /** Replace persisted state with the deterministic seed set. */
+  resetToSeeds(): CalendarEvent[] {
+    this.memoryFallback = null;
+    this.write(this.seedEvents);
+    return clone(this.seedEvents);
+  }
+
   private storage(): StorageLike | null {
     if (this.storageOverride) return this.storageOverride;
     if (typeof window === "undefined") return null;
@@ -178,6 +216,12 @@ export class LocalCalendarEventRepository implements CalendarEventRepository {
     } catch {
       return null;
     }
+  }
+
+  private repairWithSeeds(): CalendarEvent[] {
+    this.memoryFallback = null;
+    this.write(this.seedEvents);
+    return clone(this.seedEvents);
   }
 
   private read(): CalendarEvent[] {
@@ -191,12 +235,18 @@ export class LocalCalendarEventRepository implements CalendarEventRepository {
 
     try {
       const stored = storage.getItem(this.storageKey);
-      if (stored) return JSON.parse(stored) as CalendarEvent[];
-      this.write(this.seedEvents);
-      return clone(this.seedEvents);
+      if (!stored) {
+        return this.repairWithSeeds();
+      }
+
+      const events = parseStoredEvents(stored);
+      if (!events) {
+        return this.repairWithSeeds();
+      }
+
+      return clone(events);
     } catch {
-      this.memoryFallback = clone(this.seedEvents);
-      return clone(this.memoryFallback);
+      return this.repairWithSeeds();
     }
   }
 

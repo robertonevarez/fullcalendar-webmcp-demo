@@ -2,7 +2,7 @@
 
 A minimal enterprise FullCalendar host used to demonstrate the FullCalendar WebMCP integration published by [Protocol Tooling](https://protocoltooling.com).
 
-This branch is **Phase D1**: the host uses `@protocoltooling/fullcalendar`, a browser-local `CalendarEventRepository`, and registers the real WebMCP calendar tools. There is still no agent/chat UI — WebMCP remains invisible infrastructure.
+This branch includes **Phase D1.1** hardening on top of D1: durable local persistence, corrupt-storage self-repair, month-scoped demo state, and a hidden `?reset=1` recovery path. There is still no agent/chat UI — WebMCP remains invisible infrastructure.
 
 ## What you should see
 
@@ -19,21 +19,31 @@ npm run lint
 npm run build
 ```
 
+## Reset demo state
+
+Restore the deterministic seed calendar without opening DevTools:
+
+```text
+/?reset=1
+```
+
 ## Architecture
 
 ```text
 External Agent / WebMCP inspector
         ↓
-useFullCalendarWebMCP (@protocoltooling/fullcalendar)
+useFullCalendarWebMCP
         ↓
-LocalCalendarEventRepository (localStorage)
+LocalCalendarEventRepository (month-scoped localStorage)
         ↓
 FullCalendar host state
 ```
 
-## Seed date strategy
+## Seed / persistence strategy
 
-Events are generated relative to the current calendar month with stable IDs (for example `seed-site-survey`) the first time local storage is empty. Clear site data for `localhost` to re-seed.
+- Seed events are generated relative to the current calendar month with stable IDs.
+- Persistence is scoped per year-month (`…:v1:YYYY-MM`), so returning next month starts a fresh seeded demo while mutations within the active month survive reload.
+- Invalid localStorage payloads are detected and rewritten with fresh seeds.
 
 ## WebMCP tools
 
