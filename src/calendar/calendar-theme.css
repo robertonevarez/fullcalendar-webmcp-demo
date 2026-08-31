@@ -1,0 +1,162 @@
+/*
+ * Phase D4 — FullCalendar visual refinement
+ *
+ * Prefer documented FullCalendar palette CSS variables, then targeted
+ * overrides scoped under .calendar-surface. Avoid depending on hashed
+ * theme utility class names.
+ */
+
+:root {
+  --pt-calendar-text: #111827;
+  --pt-calendar-text-muted: #6b7280;
+  --pt-calendar-text-faint: #9ca3af;
+  --pt-calendar-control-bg: #ffffff;
+  --pt-calendar-control-hover: #f3f4f6;
+  --pt-calendar-control-active: #ebeef2;
+  --pt-calendar-event-bg: #e8eef7;
+  --pt-calendar-event-fg: #1e3a5f;
+  --pt-calendar-focus: #3b82f680;
+  --pt-calendar-transition: 150ms ease;
+
+  /*
+   * Pulse palette overrides (documented FullCalendar color-palette mechanism).
+   * Soften stock Pulse toward restrained enterprise neutrals.
+   */
+  --fc-pulse-background: #ffffff;
+  --fc-pulse-border: #f0f1f3;
+  --fc-pulse-strong-border: #e8eaee;
+  --fc-pulse-foreground: var(--pt-calendar-text);
+  --fc-pulse-muted-foreground: var(--pt-calendar-text-muted);
+  --fc-pulse-faint-foreground: var(--pt-calendar-text-faint);
+  --fc-pulse-faint: #00000006;
+  --fc-pulse-muted: #0000000d;
+  --fc-pulse-strong: #00000014;
+
+  /* Secondary toolbar buttons (prev / next / today) */
+  --fc-pulse-secondary: var(--pt-calendar-control-bg);
+  --fc-pulse-secondary-over: var(--pt-calendar-control-hover);
+  --fc-pulse-secondary-down: var(--pt-calendar-control-active);
+  --fc-pulse-secondary-foreground: var(--pt-calendar-text);
+  --fc-pulse-secondary-icon: #4b5563;
+  --fc-pulse-secondary-icon-over: var(--pt-calendar-text);
+
+  /* Segmented Month / Week / Day — track uses unselected; active pill uses selected */
+  --fc-pulse-unselected: #f1f2f4;
+  --fc-pulse-unselected-foreground: var(--pt-calendar-text-muted);
+  --fc-pulse-selected: #ffffff;
+  --fc-pulse-selected-foreground: var(--pt-calendar-text);
+
+  /* Events — tinted enterprise blue, dark readable title */
+  --fc-pulse-event: var(--pt-calendar-event-bg);
+  --fc-pulse-event-contrast: var(--pt-calendar-event-fg);
+  --fc-pulse-primary: #3d6ea5;
+  --fc-pulse-primary-over: #4a7ab0;
+  --fc-pulse-primary-down: #355f8f;
+  --fc-pulse-primary-foreground: #ffffff;
+  --fc-pulse-tertiary: #3d6ea5;
+  --fc-pulse-tertiary-over: #4a7ab0;
+  --fc-pulse-tertiary-down: #355f8f;
+  --fc-pulse-tertiary-foreground: #ffffff;
+}
+
+/* Cohesive calendar frame — FullCalendar v7 internalView root (classNames.internalView) */
+.calendar-surface .fc-LQ {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+  overflow: hidden;
+}
+
+/* Day numbers: current month neutral; outside month noticeably muted */
+.calendar-surface [data-pt-day="current"] > div:first-child > div {
+  color: var(--pt-calendar-text);
+}
+
+.calendar-surface [data-pt-day="other"] > div:first-child > div {
+  color: var(--pt-calendar-text-faint);
+}
+
+/* Toolbar title hierarchy */
+.calendar-surface [role="heading"] {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--pt-calendar-text);
+  line-height: 1.25;
+}
+
+/* Compact, precise controls */
+.calendar-surface button,
+.calendar-surface [role="tab"] {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition:
+    background-color var(--pt-calendar-transition),
+    border-color var(--pt-calendar-transition),
+    color var(--pt-calendar-transition),
+    box-shadow var(--pt-calendar-transition);
+}
+
+.calendar-surface button:focus-visible,
+.calendar-surface [role="tab"]:focus-visible {
+  outline: 2px solid var(--pt-calendar-focus);
+  outline-offset: 2px;
+}
+
+/* Weekday headers — quiet structural labels */
+.calendar-surface [role="columnheader"] {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--pt-calendar-text-muted);
+}
+
+/* Day numbers — compact and quiet */
+.calendar-surface [role="gridcell"] {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/*
+ * Event interaction polish.
+ * FullCalendar v7 sets --fc-event-color / --fc-event-contrast-color on event
+ * elements (documented CSS variables). Target those rather than theme hashes.
+ */
+.calendar-surface [style*="--fc-event-color"] {
+  border-radius: 4px;
+  transition:
+    filter var(--pt-calendar-transition),
+    opacity var(--pt-calendar-transition);
+}
+
+@media (hover: hover) {
+  .calendar-surface [style*="--fc-event-color"]:hover {
+    filter: brightness(0.97);
+  }
+}
+
+.calendar-surface [style*="--fc-event-color"]:active {
+  filter: brightness(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-surface button,
+  .calendar-surface [role="tab"],
+  .calendar-surface [style*="--fc-event-color"] {
+    transition: none;
+  }
+}
+
+/* Narrow toolbar: keep controls usable without a mobile nav system */
+@media (max-width: 720px) {
+  .calendar-surface [role="heading"] {
+    font-size: 0.875rem;
+  }
+
+  .calendar-surface button,
+  .calendar-surface [role="tab"] {
+    font-size: 0.75rem;
+  }
+}
