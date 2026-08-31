@@ -10,10 +10,13 @@ import classicTheme from "@fullcalendar/react/themes/classic";
 import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import { updateEventInState } from "./event-ops";
+import {
+  useFullCalendarWebMCP,
+  type CalendarEvent,
+} from "@protocoltooling/fullcalendar";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { LocalCalendarEventRepository } from "./local-calendar-repository";
 import { createSeedEvents } from "./seed-events";
-import type { CalendarEvent } from "./types";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/classic/theme.css";
@@ -46,16 +49,48 @@ function patchFromMove(info: EventDropInfo | EventResizeDoneInfo) {
 export function CalendarApp() {
   const calendarRef = useRef<CalendarRef>(null);
   const isClient = useIsClient();
-  const [events, setEvents] = useState<CalendarEvent[]>(() => createSeedEvents());
+  const [repository] = useState(
+    () =>
+      new LocalCalendarEventRepository({
+        seedEvents: createSeedEvents(),
+      }),
+  );
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
 
-  const onHumanMove = useCallback((info: EventDropInfo | EventResizeDoneInfo) => {
-    const patch = patchFromMove(info);
-    if (!patch) {
-      info.revert();
-      return;
-    }
-    setEvents((current) => updateEventInState(current, info.event.id, patch));
-  }, []);
+  const reloadEvents = useCallback(async () => {
+    setEvents(await repository.list());
+  }, [repository]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    // Initial hydrate from the authoritative repository (localStorage).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async store read on client mount
+    void reloadEvents();
+  }, [isClient, reloadEvents]);
+
+  useFullCalendarWebMCP({
+    calendarRef,
+    events: repository,
+    onEventsChanged: reloadEvents,
+  });
+
+  const onHumanMove = useCallback(
+    async (info: EventDropInfo | EventResizeDoneInfo) => {
+      const patch = patchFromMove(info);
+      if (!patch) {
+        info.revert();
+        return;
+      }
+
+      try {
+        await repository.update(info.event.id, patch);
+        await reloadEvents();
+      } catch {
+        info.revert();
+      }
+    },
+    [repository, reloadEvents],
+  );
 
   return (
     <div className="calendar-surface" data-testid="calendar-surface">
@@ -78,8 +113,8 @@ export function CalendarApp() {
             allDay: event.allDay,
           }))}
           height="100%"
-          eventDrop={onHumanMove}
-          eventResize={onHumanMove}
+          eventDrop={(info) => void onHumanMove(info)}
+          eventResize={(info) => void onHumanMove(info)}
         />
       ) : null}
     </div>
