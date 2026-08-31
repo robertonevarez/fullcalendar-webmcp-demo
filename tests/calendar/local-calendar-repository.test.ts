@@ -4,7 +4,7 @@ import {
   parseStoredEvents,
   storageKeyForMonth,
 } from "@/calendar/local-calendar-repository";
-import { createSeedEvents } from "@/calendar/seed-events";
+import { createSeedEvents, DEMO_STORAGE_KEY } from "@/calendar/seed-events";
 
 function memoryStorage(initial: Record<string, string> = {}): Storage {
   const map = new Map<string, string>(Object.entries(initial));
@@ -50,14 +50,14 @@ describe("parseStoredEvents", () => {
   });
 
   it("accepts valid CalendarEvent arrays", () => {
-    const events = createSeedEvents(new Date(2026, 7, 1));
+    const events = createSeedEvents();
     expect(parseStoredEvents(JSON.stringify(events))).toEqual(events);
   });
 });
 
 describe("LocalCalendarEventRepository", () => {
-  const seed = createSeedEvents(new Date(2026, 7, 1));
-  const key = storageKeyForMonth(new Date(2026, 7, 1));
+  const seed = createSeedEvents();
+  const key = DEMO_STORAGE_KEY;
   let storage: Storage;
   let repository: LocalCalendarEventRepository;
 
@@ -73,26 +73,26 @@ describe("LocalCalendarEventRepository", () => {
 
   it("seeds deterministic enterprise events on first read", async () => {
     const events = await repository.list();
-    expect(events.length).toBe(10);
-    expect(events.map((event) => event.id)).toContain("seed-site-survey");
-    expect(JSON.parse(storage.getItem(key)!)).toHaveLength(10);
+    expect(events.length).toBe(seed.length);
+    expect(events.map((event) => event.id)).toContain("seed-sep-site-survey");
+    expect(JSON.parse(storage.getItem(key)!)).toHaveLength(seed.length);
   });
 
   it("persists human/agent updates through the repository", async () => {
-    await repository.update("seed-site-survey", {
-      start: "2026-08-20",
+    await repository.update("seed-sep-site-survey", {
+      start: "2026-09-20",
       end: null,
       allDay: true,
     });
 
-    const moved = await repository.get("seed-site-survey");
-    expect(moved?.start).toBe("2026-08-20");
+    const moved = await repository.get("seed-sep-site-survey");
+    expect(moved?.start).toBe("2026-09-20");
   });
 
   it("creates and deletes events through the same store", async () => {
     const created = await repository.create({
       title: "Commissioning — Lab 2",
-      start: "2026-08-21",
+      start: "2026-09-21",
       end: null,
       allDay: true,
     });
@@ -118,37 +118,48 @@ describe("LocalCalendarEventRepository", () => {
   });
 
   it("resetToSeeds restores the deterministic seed set", async () => {
-    await repository.update("seed-site-survey", {
-      start: "2026-08-28",
+    await repository.update("seed-sep-site-survey", {
+      start: "2026-09-28",
       end: null,
       allDay: true,
     });
-    expect((await repository.get("seed-site-survey"))?.start).toBe("2026-08-28");
+    expect((await repository.get("seed-sep-site-survey"))?.start).toBe(
+      "2026-09-28",
+    );
 
     const restored = repository.resetToSeeds();
-    expect(restored.find((event) => event.id === "seed-site-survey")?.start).toBe(
-      "2026-08-03",
+    expect(restored.find((event) => event.id === "seed-sep-site-survey")?.start).toBe(
+      "2026-09-02",
     );
     expect(await repository.list()).toEqual(seed);
   });
 
-  it("keeps August and September demo state independent", async () => {
-    await repository.update("seed-site-survey", {
-      start: "2026-08-20",
+  it("keeps the demo window store independent from legacy month keys", async () => {
+    await repository.update("seed-sep-site-survey", {
+      start: "2026-09-20",
       end: null,
       allDay: true,
     });
 
-    const september = new LocalCalendarEventRepository({
+    const legacyAugust = new LocalCalendarEventRepository({
       storage,
-      storageKey: storageKeyForMonth(new Date(2026, 8, 1)),
-      seedEvents: createSeedEvents(new Date(2026, 8, 1)),
+      storageKey: storageKeyForMonth(new Date(2026, 7, 1)),
+      seedEvents: [
+        {
+          id: "seed-sep-site-survey",
+          title: "Site Survey — North Campus",
+          start: "2026-08-03",
+          end: null,
+          allDay: true,
+        },
+      ],
     });
 
-    const septEvents = await september.list();
-    expect(septEvents.find((event) => event.id === "seed-site-survey")?.start).toBe(
-      "2026-09-03",
+    expect(
+      (await legacyAugust.get("seed-sep-site-survey"))?.start,
+    ).toBe("2026-08-03");
+    expect((await repository.get("seed-sep-site-survey"))?.start).toBe(
+      "2026-09-20",
     );
-    expect((await repository.get("seed-site-survey"))?.start).toBe("2026-08-20");
   });
 });

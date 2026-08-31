@@ -22,11 +22,8 @@ vi.mock("@protocoltooling/fullcalendar", async () => {
 });
 
 import { CalendarApp } from "@/calendar/CalendarApp";
-import {
-  LocalCalendarEventRepository,
-  storageKeyForMonth,
-} from "@/calendar/local-calendar-repository";
-import { createSeedEvents } from "@/calendar/seed-events";
+import { LocalCalendarEventRepository } from "@/calendar/local-calendar-repository";
+import { createSeedEvents, DEMO_STORAGE_KEY } from "@/calendar/seed-events";
 
 function memoryStorage(): Storage {
   const map = new Map<string, string>();
@@ -53,15 +50,14 @@ function memoryStorage(): Storage {
 }
 
 describe("CalendarApp D1 wiring", () => {
-  const anchor = new Date(2026, 7, 1);
   let repository: LocalCalendarEventRepository;
 
   beforeEach(() => {
     onEventsChangedRef.current = null;
     repository = new LocalCalendarEventRepository({
       storage: memoryStorage(),
-      storageKey: storageKeyForMonth(anchor),
-      seedEvents: createSeedEvents(anchor),
+      storageKey: DEMO_STORAGE_KEY,
+      seedEvents: createSeedEvents(),
       createId: () => "created-1",
     });
     window.history.replaceState({}, "", "/");
@@ -71,13 +67,16 @@ describe("CalendarApp D1 wiring", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("renders month view with seeded enterprise events", async () => {
+  it("renders September month view with seeded enterprise events", async () => {
     render(<CalendarApp repository={repository} />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
     });
 
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+      /September 2026/i,
+    );
     expect(screen.getByRole("tab", { name: /month view/i })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -96,9 +95,9 @@ describe("CalendarApp D1 wiring", () => {
       expect(screen.getByText("Site Survey — North Campus")).toBeInTheDocument();
     });
 
-    await repository.update("seed-site-survey", {
+    await repository.update("seed-sep-site-survey", {
       title: "Site Survey — Relocated Campus",
-      start: "2026-08-20",
+      start: "2026-09-20",
       end: null,
       allDay: true,
     });
@@ -114,9 +113,9 @@ describe("CalendarApp D1 wiring", () => {
   });
 
   it("honors ?reset=1 by restoring seed events and stripping the query", async () => {
-    await repository.update("seed-site-survey", {
+    await repository.update("seed-sep-site-survey", {
       title: "Site Survey — Mutated",
-      start: "2026-08-28",
+      start: "2026-09-28",
       end: null,
       allDay: true,
     } satisfies Partial<CalendarEvent>);

@@ -16,12 +16,14 @@ import {
 } from "@protocoltooling/fullcalendar";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { persistHumanMove } from "./human-move";
-import {
-  LocalCalendarEventRepository,
-  storageKeyForMonth,
-} from "./local-calendar-repository";
+import { LocalCalendarEventRepository } from "./local-calendar-repository";
 import { shouldResetFromSearch, stripResetParam } from "./reset";
-import { createSeedEvents } from "./seed-events";
+import {
+  createSeedEvents,
+  DEMO_INITIAL_DATE,
+  DEMO_STORAGE_KEY,
+  DEMO_VALID_RANGE,
+} from "./seed-events";
 
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/classic/theme.css";
@@ -48,7 +50,7 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
       injectedRepository ??
       new LocalCalendarEventRepository({
         seedEvents: createSeedEvents(),
-        storageKey: storageKeyForMonth(),
+        storageKey: DEMO_STORAGE_KEY,
       }),
   );
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -94,6 +96,8 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
           ref={calendarRef}
           plugins={[classicTheme, dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
+          initialDate={DEMO_INITIAL_DATE}
+          validRange={DEMO_VALID_RANGE}
           headerToolbar={{
             left: "prev,next today",
             center: "title",

@@ -6,7 +6,7 @@ This branch includes **Phase D1.1** hardening on top of D1: durable local persis
 
 ## What you should see
 
-Opening the app shows a full-page FullCalendar instance in `dayGridMonth` with generic enterprise operational events. Human drag/resize and agent tool calls both persist through the same local repository.
+Opening the app shows a full-page FullCalendar locked to **September–November 2026**, starting on September, with a dense enterprise seed calendar for that month. Human drag/resize and agent tool calls both persist through the same local repository.
 
 ## Commands
 
@@ -34,15 +34,16 @@ External Agent / WebMCP inspector
         ↓
 useFullCalendarWebMCP
         ↓
-LocalCalendarEventRepository (month-scoped localStorage)
+LocalCalendarEventRepository (Sep–Nov 2026 localStorage window)
         ↓
 FullCalendar host state
 ```
 
 ## Seed / persistence strategy
 
-- Seed events are generated relative to the current calendar month with stable IDs.
-- Persistence is scoped per year-month (`…:v1:YYYY-MM`), so returning next month starts a fresh seeded demo while mutations within the active month survive reload.
+- The calendar `validRange` is fixed to September–November 2026 (`initialDate` = Sep 1).
+- Seeds densely fill September and lightly cover October and November with stable IDs.
+- Persistence uses one window key (`…:v1:2026-sep-nov`); `/?reset=1` rewrites that store from seeds.
 - Invalid localStorage payloads are detected and rewritten with fresh seeds.
 
 ## WebMCP tools
