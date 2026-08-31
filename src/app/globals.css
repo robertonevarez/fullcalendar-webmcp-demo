@@ -25,8 +25,13 @@ body {
   --pt-transition: 150ms ease;
 
   /*
-   * Inter OpenType features matching protocoltooling/theme.css:
-   * liga + calt, ss01 open digits, ss03 round quotes, cv11 single-story a.
+   * Inter OpenType features matching protocoltooling/theme.css
+   * (https://rsms.me/inter/#features). Requires InterVariable (local),
+   * not next/font/google Inter — Google’s build omits cv11/ss0x glyphs.
+   * liga + calt: recommended defaults.
+   * ss01: alternate (open) digits.
+   * ss03: round quotes & commas.
+   * cv11: single-story a.
    */
   font-optical-sizing: auto;
   font-feature-settings: "liga" 1, "calt" 1, "ss01" 1, "ss03" 1, "cv11" 1;
