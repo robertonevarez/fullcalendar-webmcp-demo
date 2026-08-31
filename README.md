@@ -1,26 +1,24 @@
-# Protocol Tooling Documentation Website
+# FullCalendar WebMCP Demo
 
-Official technical documentation website for **Protocol Tooling** ([protocoltooling.com](https://protocoltooling.com)).
+A minimal enterprise FullCalendar host used to demonstrate the FullCalendar WebMCP integration published by [Protocol Tooling](https://protocoltooling.com).
 
-Built with [Blume](https://useblume.dev) — markdown-first, AI-native documentation powered by Astro and Vite.
+This branch is **Phase D0**: the host calendar surface only. WebMCP wiring (`@protocoltooling/fullcalendar`), repository/persistence, and external-agent validation are deferred to Phase D1.
 
----
+## What you should see
+
+Opening the app shows a full-page FullCalendar instance in `dayGridMonth` with generic enterprise operational events. There is no chat UI, assistant panel, or product chrome around the calendar.
 
 ## Commands
 
 ```bash
-# Start local development server
+npm install
 npm run dev
-
-# Build production static site
-npm run build
-
-# Validate documentation links
-npm run validate
-
-# Run health diagnostics
-npm run doctor
-
-# Run tests
 npm test
+npm run typecheck
+npm run lint
+npm run build
 ```
+
+## Seed date strategy
+
+Events are generated relative to the current calendar month with stable IDs (for example `seed-site-survey`). Placement is deterministic so the demo stays populated as months change, and tests can assert predictable IDs without hard-coding a single stale month.
