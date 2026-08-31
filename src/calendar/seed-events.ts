@@ -1,4 +1,4 @@
-import type { CalendarEvent } from "./types";
+import type { CalendarEvent } from "@protocoltooling/fullcalendar";
 
 type SeedSpec = {
   id: string;

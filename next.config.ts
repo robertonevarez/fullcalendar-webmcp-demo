@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // WebMCP requires origin-isolated documents.
+          { key: "Origin-Agent-Cluster", value: "?1" },
+          { key: "Permissions-Policy", value: "tools=(self)" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
