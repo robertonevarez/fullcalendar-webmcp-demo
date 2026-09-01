@@ -27,7 +27,7 @@ const inter = localFont({
 export const metadata: Metadata = {
   title: "FullCalendar WebMCP Demo",
   description:
-    "Minimal enterprise FullCalendar host for the FullCalendar WebMCP integration published by Protocol Tooling.",
+    "A live FullCalendar demo where people and agents share the same calendar state through WebMCP.",
 };
 
 export default function RootLayout({
