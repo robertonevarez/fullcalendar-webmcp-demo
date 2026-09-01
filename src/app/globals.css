@@ -9,20 +9,25 @@ body {
 }
 
 /*
- * Protocol Tooling / Blume light-mode tokens (inspected from protocoltooling.com).
- * Translated into the demo — not a wholesale Blume CSS copy.
+ * Linear / Emil Kowalski–inspired product surface on Protocol Tooling tokens.
+ * Soft neutrals, quiet borders, refined radius — not brutalist ink chrome.
  */
 :root {
   --pt-background: oklch(100% 0 0);
-  --pt-page: oklch(96.5% 0 0);
-  --pt-foreground: oklch(14.5% 0 0);
-  --pt-muted: oklch(96.5% 0 0);
-  --pt-muted-foreground: oklch(54% 0 0);
-  --pt-border: oklch(88% 0.006 260 / 0.72);
-  --pt-radius: 0.5rem;
-  --pt-accent: oklch(62% 0.16 250);
-  --pt-focus: oklch(62% 0.16 250 / 0.45);
-  --pt-transition: 150ms ease;
+  --pt-page: oklch(97.2% 0.002 260);
+  --pt-foreground: oklch(22% 0.01 260);
+  --pt-muted: oklch(96.2% 0.003 260);
+  --pt-muted-foreground: oklch(52% 0.01 260);
+  --pt-border: oklch(0% 0 0 / 0.09);
+  --pt-border-strong: oklch(0% 0 0 / 0.12);
+  --pt-radius: 0.625rem;
+  --pt-radius-control: 0.4375rem;
+  --pt-radius-event: 0.3125rem;
+  --pt-accent: oklch(55% 0.14 255);
+  --pt-focus: oklch(55% 0.14 255 / 0.4);
+  --pt-shadow-soft: 0 1px 2px oklch(0% 0 0 / 0.04), 0 1px 1px oklch(0% 0 0 / 0.03);
+  --pt-shadow-float: 0 4px 16px oklch(0% 0 0 / 0.08), 0 1px 2px oklch(0% 0 0 / 0.04);
+  --pt-transition: 140ms cubic-bezier(0.25, 1, 0.5, 1);
 
   /*
    * Inter OpenType features matching protocoltooling/theme.css
@@ -38,9 +43,10 @@ body {
 }
 
 body {
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 20px 24px;
+  padding: 12px 16px;
   background: var(--pt-page);
   color: var(--pt-foreground);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -48,19 +54,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Base UI portal stacking context — see https://base-ui.com/react/overview/quick-start */
+.app-root {
+  isolation: isolate;
+  height: 100%;
+}
+
 .calendar-surface {
-  height: calc(100vh - 40px);
-  height: calc(100dvh - 40px);
+  height: calc(100vh - 24px);
+  height: calc(100dvh - 24px);
   min-height: 480px;
 }
 
 @media (max-width: 720px) {
   body {
-    padding: 12px;
+    padding: 8px;
   }
 
   .calendar-surface {
-    height: calc(100vh - 24px);
-    height: calc(100dvh - 24px);
+    height: calc(100vh - 16px);
+    height: calc(100dvh - 16px);
   }
 }

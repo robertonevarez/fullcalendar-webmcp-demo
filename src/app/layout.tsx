@@ -37,7 +37,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <div className="app-root">{children}</div>
+      </body>
     </html>
   );
 }
