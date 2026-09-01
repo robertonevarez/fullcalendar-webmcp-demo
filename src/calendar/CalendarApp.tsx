@@ -206,6 +206,7 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
               editable
               events={events.map((event) => {
                 const swatch = paletteForEventId(event.id);
+                const metadata = event.metadata;
                 return {
                   id: event.id,
                   title: event.title,
@@ -215,13 +216,28 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
                   // Presentation-only FullCalendar EventUi inputs — not persisted.
                   color: swatch.color,
                   contrastColor: swatch.contrastColor,
+                  extendedProps: {
+                    location:
+                      typeof metadata?.location === "string"
+                        ? metadata.location
+                        : undefined,
+                    team:
+                      typeof metadata?.team === "string"
+                        ? metadata.team
+                        : undefined,
+                    attendees: Array.isArray(metadata?.attendees)
+                      ? metadata.attendees.filter(
+                          (value): value is string => typeof value === "string",
+                        )
+                      : undefined,
+                  },
                 };
               })}
               eventContent={CalendarEventContent}
               height="100%"
               expandRows={false}
-              slotMinHeight={28}
-              eventMinHeight={16}
+              slotMinHeight={36}
+              eventMinHeight={24}
               datesSet={onDatesSet}
               dayCellDidMount={(info) => {
                 info.el.dataset.ptDay = info.isOther ? "other" : "current";

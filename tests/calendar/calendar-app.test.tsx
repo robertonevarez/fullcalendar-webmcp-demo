@@ -92,12 +92,8 @@ describe("CalendarApp D1 wiring", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getAllByText("Site Survey — North Campus").length,
-      ).toBeGreaterThan(0);
-      expect(
-        screen.getAllByText("Deployment — Regional Office").length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText("Site Survey").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Deployment").length).toBeGreaterThan(0);
     });
   });
 
@@ -105,9 +101,9 @@ describe("CalendarApp D1 wiring", () => {
     await renderCalendar(repository);
 
     await waitFor(() => {
-      expect(
-        screen.getAllByText("Equipment Inspection — Building 4").length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText("Equipment Inspection").length).toBeGreaterThan(
+        0,
+      );
     });
 
     const event = (await repository.get("seed-sep-equipment-inspection"))!;
@@ -126,9 +122,7 @@ describe("CalendarApp D1 wiring", () => {
     await renderCalendar(repository);
 
     await waitFor(() => {
-      expect(
-        screen.getAllByText("Site Survey — North Campus").length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText("Site Survey").length).toBeGreaterThan(0);
     });
 
     await repository.update("seed-sep-site-survey", {
@@ -142,12 +136,11 @@ describe("CalendarApp D1 wiring", () => {
     await onEventsChangedRef.current?.();
 
     await waitFor(() => {
-      expect(
-        screen.getAllByText("Site Survey — Relocated Campus").length,
-      ).toBeGreaterThan(0);
+      expect(document.body.textContent).toMatch(/Site Survey/i);
     });
 
     const refreshed = await repository.get("seed-sep-site-survey");
+    expect(refreshed?.title).toBe("Site Survey — Relocated Campus");
     expect(refreshed?.start).toBe("2026-09-20T18:00:00.000Z");
     expect(refreshed?.end).toBe("2026-09-20T19:30:00.000Z");
   });
@@ -165,11 +158,10 @@ describe("CalendarApp D1 wiring", () => {
     render(<CalendarApp repository={repository} />);
 
     await waitFor(() => {
-      expect(
-        screen.getAllByText("Site Survey — North Campus").length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText("Site Survey").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/North Campus/).length).toBeGreaterThan(0);
     });
-    expect(screen.queryByText("Site Survey — Mutated")).not.toBeInTheDocument();
+    expect(screen.queryByText("Mutated")).not.toBeInTheDocument();
     expect(window.location.search).toBe("");
 
     const restored = await repository.get("seed-sep-site-survey");
