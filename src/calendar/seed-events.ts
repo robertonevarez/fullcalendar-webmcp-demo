@@ -83,7 +83,7 @@ export function projectSeedMetadata(seed: {
  * Majority are timed business-hour appointments; a minority are true all-day
  * or multi-day operations. September is dense; Aug/Oct stay lighter.
  *
- * A small subset carries host-selected metadata for the P0.3 WebMCP experiment.
+ * A small subset carries host-selected metadata for WebMCP agents.
  * Most events remain metadata-free. Private seed fields are never projected.
  */
 const TIMED_SEEDS: TimedSeed[] = [
