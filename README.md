@@ -1,6 +1,6 @@
 # FullCalendar WebMCP Demo
 
-A live demonstration of `@protocoltooling/fullcalendar` from [Protocol Tooling](https://protocoltooling.com).
+A live demonstration of `@protocoltooling/fullcalendar` by Roberto Nevarez.
 
 People and agents operate the same calendar state. There is no embedded chat UI: WebMCP is the agent interface, and FullCalendar remains the human interface.
 
@@ -80,4 +80,4 @@ npm run build
 
 ## License
 
-MIT
+MIT © 2026 Roberto Nevarez
