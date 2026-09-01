@@ -30,6 +30,25 @@ body {
   --pt-transition: 140ms cubic-bezier(0.25, 1, 0.5, 1);
 
   /*
+   * Motion language for agent-driven mutations.
+   * ease-out for entering/exiting, ease-in-out for movement on screen,
+   * everything under 300ms, exits ~20% faster than entrances.
+   */
+  --pt-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --pt-ease-move: cubic-bezier(0.77, 0, 0.175, 1);
+  --pt-emphasis-hold: 800ms;
+  --pt-emphasis-fade: 400ms;
+
+  /*
+   * The mutation ring pulses so a settled event still catches the eye. Three
+   * beats at 520ms is ~1.6s total: past two beats it reads as a state the event
+   * is in rather than something that just happened to it. Raising the count is
+   * a one-line change if a demo needs to be louder.
+   */
+  --pt-emphasis-pulses: 3;
+  --pt-emphasis-pulse: 520ms;
+
+  /*
    * Inter OpenType features matching protocoltooling/theme.css
    * (https://rsms.me/inter/#features). Requires InterVariable (local),
    * not next/font/google Inter — Google’s build omits cv11/ss0x glyphs.
@@ -58,6 +77,18 @@ body {
 .app-root {
   isolation: isolate;
   height: 100%;
+}
+
+.pt-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .calendar-surface {

@@ -1,11 +1,23 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "temporal-polyfill/global";
-import type { CalendarEvent } from "@protocoltooling/fullcalendar";
+import type {
+  CalendarEvent,
+  CalendarEventRepository,
+} from "@protocoltooling/fullcalendar";
 
 const onEventsChangedRef: {
   current: (() => unknown | Promise<unknown>) | null;
 } = {
+  current: null,
+};
+
+/**
+ * The origin-tagged handle CalendarApp hands to WebMCP. Driving tests through
+ * this exercises the real path a tool takes: repository write emits a signal,
+ * then `onEventsChanged` consumes it.
+ */
+const agentRepositoryRef: { current: CalendarEventRepository | null } = {
   current: null,
 };
 
@@ -16,9 +28,11 @@ vi.mock("@protocoltooling/fullcalendar", async () => {
   return {
     ...actual,
     useFullCalendarWebMCP: (options: {
+      events: CalendarEventRepository;
       onEventsChanged: () => unknown | Promise<unknown>;
     }) => {
       onEventsChangedRef.current = options.onEventsChanged;
+      agentRepositoryRef.current = options.events;
     },
   };
 });
@@ -277,5 +291,349 @@ describe("CalendarApp Base UI toolbar (D4.2)", () => {
       "data-pressed",
       "",
     );
+  });
+});
+
+/**
+ * jsdom has no Web Animations API. This stands in for it so tests can assert
+ * whether the spatial layer was reached at all.
+ */
+function installFakeAnimate() {
+  type Host = { animate?: Element["animate"] };
+  const host = Element.prototype as unknown as Host;
+  const had = "animate" in Element.prototype;
+  const previous = host.animate;
+
+  const spy = vi.fn(() => ({
+    finished: Promise.resolve(),
+    cancel: () => {},
+    effect: null,
+  }));
+  host.animate = spy as unknown as Element["animate"];
+
+  return {
+    spy,
+    restore: () => {
+      if (had) host.animate = previous;
+      else delete host.animate;
+    },
+  };
+}
+
+function setReducedMotion(reduced: boolean) {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: reduced && query.includes("prefers-reduced-motion"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
+
+function markedEvents(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>("[data-pt-mutation]"));
+}
+
+function marksFor(id: string): string[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(`[data-pt-event-id="${id}"]`),
+  ).map((element) => element.dataset.ptMutation ?? "");
+}
+
+describe("CalendarApp agent mutation feedback (D5)", () => {
+  let repository: LocalCalendarEventRepository;
+  let restoreMotion: (() => void) | null = null;
+
+  beforeEach(() => {
+    onEventsChangedRef.current = null;
+    agentRepositoryRef.current = null;
+    repository = new LocalCalendarEventRepository({
+      storage: memoryStorage(),
+      storageKey: DEMO_STORAGE_KEY,
+      seedEvents: createSeedEvents(),
+      createId: () => "created-1",
+    });
+    window.history.replaceState({}, "", "/");
+  });
+
+  afterEach(() => {
+    restoreMotion?.();
+    restoreMotion = null;
+    cleanup();
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("stamps a stable event id onto every rendered segment", async () => {
+    await renderCalendar(repository);
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll("[data-pt-event-id]").length,
+      ).toBeGreaterThan(0);
+    });
+    expect(
+      document.querySelectorAll(
+        '[data-pt-event-id="seed-sep-site-survey"]',
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("marks an agent-created event and announces it", async () => {
+    await renderCalendar(repository);
+
+    await agentRepositoryRef.current!.create({
+      title: "Readiness Review",
+      start: "2026-09-15T14:00:00-04:00",
+      end: "2026-09-15T15:00:00-04:00",
+    });
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(marksFor("created-1")).toContain("created");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /Added Readiness Review/i,
+      );
+    });
+  });
+
+  it("marks an agent reschedule as moved rather than created", async () => {
+    await renderCalendar(repository);
+
+    await agentRepositoryRef.current!.update("seed-sep-site-survey", {
+      start: "2026-09-22T14:00:00-04:00",
+      end: "2026-09-22T15:30:00-04:00",
+    });
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(marksFor("seed-sep-site-survey")).toContain("rescheduled");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /Site Survey.*moved to/i,
+      );
+    });
+  });
+
+  it("distinguishes an in-place rename from a move", async () => {
+    await renderCalendar(repository);
+
+    const current = (await repository.get("seed-sep-site-survey"))!;
+    await agentRepositoryRef.current!.update("seed-sep-site-survey", {
+      title: "Site Survey — Relocated Campus",
+      start: current.start,
+      end: current.end,
+    });
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(marksFor("seed-sep-site-survey")).toContain("updated");
+    });
+  });
+
+  it("removes a deleted event and leaves no mark behind", async () => {
+    await renderCalendar(repository);
+
+    await agentRepositoryRef.current!.delete("seed-sep-site-survey");
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll('[data-pt-event-id="seed-sep-site-survey"]'),
+      ).toHaveLength(0);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /Removed Site Survey/i,
+      );
+    });
+    expect(markedEvents()).toHaveLength(0);
+  });
+
+  it("treats a refresh with no signal as ordinary reconciliation", async () => {
+    await renderCalendar(repository);
+
+    // Writing straight to the injected store bypasses the origin-tagged handle,
+    // which is what an ordinary refresh or a human drag looks like.
+    await repository.update("seed-sep-site-survey", {
+      title: "Quietly Changed Survey",
+      start: "2026-09-23T14:00:00-04:00",
+      end: "2026-09-23T15:30:00-04:00",
+    });
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/Quietly Changed Survey/i);
+    });
+    expect(markedEvents()).toHaveLength(0);
+    expect(screen.getByTestId("calendar-announcer")).toHaveTextContent("");
+  });
+
+  it("never implies success when a mutation fails", async () => {
+    await renderCalendar(repository);
+
+    await expect(
+      agentRepositoryRef.current!.delete("does-not-exist"),
+    ).rejects.toThrow(/was not found/);
+    await onEventsChangedRef.current?.();
+
+    expect(markedEvents()).toHaveLength(0);
+    expect(screen.getByTestId("calendar-announcer")).toHaveTextContent("");
+  });
+
+  it("keeps every mark through a rapid sequence of agent mutations", async () => {
+    await renderCalendar(repository);
+
+    const agent = agentRepositoryRef.current!;
+
+    // Concurrent tool calls all write before any of them refreshes.
+    await agent.create({
+      title: "Readiness Review",
+      start: "2026-09-15T14:00:00-04:00",
+      end: "2026-09-15T15:00:00-04:00",
+    });
+    await agent.update("seed-sep-site-survey", {
+      start: "2026-09-24T14:00:00-04:00",
+      end: "2026-09-24T15:30:00-04:00",
+    });
+    await Promise.all([
+      onEventsChangedRef.current?.(),
+      onEventsChangedRef.current?.(),
+    ]);
+
+    await waitFor(() => {
+      expect(marksFor("created-1")).toContain("created");
+      expect(marksFor("seed-sep-site-survey")).toContain("rescheduled");
+    });
+
+    // A burst collapses into one summary rather than reading out a sentence
+    // per event; mixed operations fall back to the neutral verb.
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /^2 events updated\.$/,
+      );
+    });
+  });
+
+  it("names the operation when a burst is all the same kind", async () => {
+    await renderCalendar(repository);
+
+    const agent = agentRepositoryRef.current!;
+    await agent.delete("seed-sep-site-survey");
+    await agent.delete("seed-sep-deployment");
+    await Promise.all([
+      onEventsChangedRef.current?.(),
+      onEventsChangedRef.current?.(),
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /^2 events removed\.$/,
+      );
+    });
+  });
+
+  it("skips the spatial layer under reduced motion but keeps the semantics", async () => {
+    restoreMotion = setReducedMotion(true);
+    const animate = installFakeAnimate();
+
+    try {
+      await renderCalendar(repository);
+
+      await agentRepositoryRef.current!.create({
+        title: "Readiness Review",
+        start: "2026-09-15T14:00:00-04:00",
+        end: "2026-09-15T15:00:00-04:00",
+      });
+      await onEventsChangedRef.current?.();
+
+      // No animation is created at all, rather than one that is neutralized.
+      expect(animate.spy).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(marksFor("created-1")).toContain("created");
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+          /Added Readiness Review/i,
+        );
+      });
+    } finally {
+      animate.restore();
+    }
+  });
+
+  it("carries a mark to the destination when a move leaves the visible range", async () => {
+    await renderCalendar(repository);
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll('[data-pt-event-id="seed-sep-site-survey"]')
+          .length,
+      ).toBeGreaterThan(0);
+    });
+
+    // October 20 is past the trailing days the September grid draws.
+    await agentRepositoryRef.current!.update("seed-sep-site-survey", {
+      start: "2026-10-20T14:00:00-04:00",
+      end: "2026-10-20T15:30:00-04:00",
+    });
+    await onEventsChangedRef.current?.();
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll('[data-pt-event-id="seed-sep-site-survey"]'),
+      ).toHaveLength(0);
+    });
+
+    // The live region still says where it went, which is the only cue that
+    // separates this from a deletion.
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-announcer")).toHaveTextContent(
+        /Site Survey.*moved to Tuesday, October 20/i,
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-next"));
+
+    await waitFor(() => {
+      expect(marksFor("seed-sep-site-survey")).toContain("rescheduled");
+    });
+  });
+
+  it("plays emphasis on arrival for a mutation made off-screen", async () => {
+    await renderCalendar(repository);
+
+    // October is outside the visible September grid.
+    await agentRepositoryRef.current!.create({
+      title: "Quarterly Handover",
+      start: "2026-10-14T14:00:00-04:00",
+      end: "2026-10-14T15:00:00-04:00",
+    });
+    await onEventsChangedRef.current?.();
+
+    expect(
+      document.querySelectorAll('[data-pt-event-id="created-1"]'),
+    ).toHaveLength(0);
+
+    fireEvent.click(screen.getByTestId("calendar-next"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /October 2026/i,
+      );
+    });
+    await waitFor(() => {
+      expect(marksFor("created-1")).toContain("created");
+    });
   });
 });
