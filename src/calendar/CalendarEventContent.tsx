@@ -65,7 +65,7 @@ function detailLine(
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-function useIsTruncated(deps: unknown[]) {
+function useIsTruncated(measureKey: string) {
   const ref = useRef<HTMLElement>(null);
   const [truncated, setTruncated] = useState(false);
 
@@ -97,8 +97,7 @@ function useIsTruncated(deps: unknown[]) {
       cancelAnimationFrame(raf);
       observer.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- measure when listed deps change
-  }, deps);
+  }, [measureKey]);
 
   return { ref, truncated };
 }
@@ -150,12 +149,9 @@ function MonthEventContent({
   place?: string;
   allDay: boolean;
 }) {
-  const { ref, truncated } = useIsTruncated([
-    headline,
-    timeText,
-    place,
-    meta.team,
-  ]);
+  const { ref, truncated } = useIsTruncated(
+    [headline, timeText, place ?? "", meta.team ?? ""].join("\0"),
+  );
   const secondary = [
     allDay ? "All day" : timeText || null,
     place,
