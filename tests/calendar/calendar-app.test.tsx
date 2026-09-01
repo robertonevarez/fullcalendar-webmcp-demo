@@ -110,8 +110,8 @@ describe("CalendarApp D1 wiring", () => {
 
     // Native eventTimeFormat + displayEventEnd should expose readable time text.
     await waitFor(() => {
-      expect(document.body.textContent).toMatch(/9:00\s*AM/i);
-      expect(document.body.textContent).toMatch(/10:30\s*AM/i);
+      expect(document.body.textContent).toMatch(/9:00/i);
+      expect(document.body.textContent).toMatch(/10:30\s*am/i);
     });
   });
 

@@ -33,10 +33,10 @@ function memoryStorage(initial: Record<string, string> = {}): Storage {
 describe("storageKeyForMonth", () => {
   it("scopes the persistence key to year-month", () => {
     expect(storageKeyForMonth(new Date(2026, 7, 15))).toBe(
-      "protocoltooling-demo:calendar-events:v2:2026-08",
+      "protocoltooling-demo:calendar-events:v4:2026-08",
     );
     expect(storageKeyForMonth(new Date(2026, 8, 1))).toBe(
-      "protocoltooling-demo:calendar-events:v2:2026-09",
+      "protocoltooling-demo:calendar-events:v4:2026-09",
     );
   });
 });
@@ -76,6 +76,31 @@ describe("LocalCalendarEventRepository", () => {
     expect(events.length).toBe(seed.length);
     expect(events.map((event) => event.id)).toContain("seed-sep-site-survey");
     expect(JSON.parse(storage.getItem(key)!)).toHaveLength(seed.length);
+  });
+
+  it("preserves host-selected metadata across core field updates", async () => {
+    const before = await repository.get("seed-sep-project-review");
+    expect(before?.metadata).toEqual({
+      location: "Central Office",
+      attendees: ["Sarah Chen", "Michael Torres"],
+    });
+
+    await repository.update("seed-sep-project-review", {
+      title: "Final Project Review",
+      start: "2026-09-18T14:00:00-04:00",
+      end: "2026-09-18T15:00:00-04:00",
+    });
+
+    const after = await repository.get("seed-sep-project-review");
+    expect(after?.title).toBe("Final Project Review");
+    expect(after?.metadata).toEqual({
+      location: "Central Office",
+      attendees: ["Sarah Chen", "Michael Torres"],
+    });
+
+    const serialized = JSON.stringify(after);
+    expect(serialized).not.toContain("tenant-secret");
+    expect(serialized).not.toContain("Sensitive internal note");
   });
 
   it("persists timed start/end updates and reloads the same values", async () => {
