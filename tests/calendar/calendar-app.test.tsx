@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "temporal-polyfill/global";
 import type { CalendarEvent } from "@protocoltooling/fullcalendar";
@@ -51,6 +51,16 @@ function memoryStorage(): Storage {
   };
 }
 
+async function renderCalendar(repository: LocalCalendarEventRepository) {
+  cleanup();
+  render(<CalendarApp repository={repository} />);
+  await waitFor(() => {
+    expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+      /September 2026/i,
+    );
+  });
+}
+
 describe("CalendarApp D1 wiring", () => {
   let repository: LocalCalendarEventRepository;
 
@@ -66,22 +76,19 @@ describe("CalendarApp D1 wiring", () => {
   });
 
   afterEach(() => {
+    cleanup();
     window.history.replaceState({}, "", "/");
   });
 
   it("renders September month view with seeded enterprise events", async () => {
-    render(<CalendarApp repository={repository} />);
+    await renderCalendar(repository);
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
-    });
-
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+    expect(screen.getByTestId("calendar-title")).toHaveTextContent(
       /September 2026/i,
     );
-    expect(screen.getByRole("tab", { name: /month view/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    expect(screen.getByTestId("calendar-view-month")).toHaveAttribute(
+      "data-pressed",
+      "",
     );
 
     await waitFor(() => {
@@ -95,7 +102,7 @@ describe("CalendarApp D1 wiring", () => {
   });
 
   it("passes a representative timed event to FullCalendar with start/end", async () => {
-    render(<CalendarApp repository={repository} />);
+    await renderCalendar(repository);
 
     await waitFor(() => {
       expect(
@@ -116,7 +123,7 @@ describe("CalendarApp D1 wiring", () => {
   });
 
   it("refreshes from repository after an agent timed mutation via onEventsChanged", async () => {
-    render(<CalendarApp repository={repository} />);
+    await renderCalendar(repository);
 
     await waitFor(() => {
       expect(
@@ -154,6 +161,7 @@ describe("CalendarApp D1 wiring", () => {
     } satisfies Partial<CalendarEvent>);
 
     window.history.replaceState({}, "", "/?reset=1");
+    cleanup();
     render(<CalendarApp repository={repository} />);
 
     await waitFor(() => {
@@ -167,5 +175,115 @@ describe("CalendarApp D1 wiring", () => {
     const restored = await repository.get("seed-sep-site-survey");
     expect(restored?.start).toBe("2026-09-02T08:00:00-04:00");
     expect(restored?.allDay).toBe(false);
+  });
+});
+
+describe("CalendarApp Base UI toolbar (D4.2)", () => {
+  let repository: LocalCalendarEventRepository;
+
+  beforeEach(() => {
+    onEventsChangedRef.current = null;
+    repository = new LocalCalendarEventRepository({
+      storage: memoryStorage(),
+      storageKey: DEMO_STORAGE_KEY,
+      seedEvents: createSeedEvents(),
+      createId: () => "created-1",
+    });
+    window.history.replaceState({}, "", "/");
+    vi.useFakeTimers({
+      toFake: ["Date"],
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("navigates with Previous / Next / Today through CalendarApi", async () => {
+    vi.setSystemTime(new Date("2026-09-15T16:00:00.000Z"));
+
+    await renderCalendar(repository);
+
+    fireEvent.click(screen.getByTestId("calendar-next"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /October 2026/i,
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-prev"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /September 2026/i,
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-next"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /October 2026/i,
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-today"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /September 2026/i,
+      );
+    });
+  });
+
+  it("changes views through changeView and keeps selection synced", async () => {
+    await renderCalendar(repository);
+
+    expect(screen.getByTestId("calendar-view-month")).toHaveAttribute(
+      "data-pressed",
+      "",
+    );
+
+    fireEvent.click(screen.getByTestId("calendar-view-week"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-view-week")).toHaveAttribute(
+        "data-pressed",
+        "",
+      );
+      expect(screen.getByTestId("calendar-view-month")).not.toHaveAttribute(
+        "data-pressed",
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-view-day"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-view-day")).toHaveAttribute(
+        "data-pressed",
+        "",
+      );
+      expect(screen.getByTestId("calendar-view-week")).not.toHaveAttribute(
+        "data-pressed",
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("calendar-view-month"));
+    await waitFor(() => {
+      expect(screen.getByTestId("calendar-view-month")).toHaveAttribute(
+        "data-pressed",
+        "",
+      );
+      expect(screen.getByTestId("calendar-title")).toHaveTextContent(
+        /September 2026|August 2026|October 2026/i,
+      );
+    });
+  });
+
+  it("does not deselect the active view when the pressed toggle is clicked again", async () => {
+    await renderCalendar(repository);
+
+    fireEvent.click(screen.getByTestId("calendar-view-month"));
+    expect(screen.getByTestId("calendar-view-month")).toHaveAttribute(
+      "data-pressed",
+      "",
+    );
   });
 });

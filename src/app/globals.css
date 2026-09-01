@@ -38,6 +38,7 @@ body {
 }
 
 body {
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   padding: 20px 24px;
@@ -46,6 +47,12 @@ body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base UI portal stacking context — see https://base-ui.com/react/overview/quick-start */
+.app-root {
+  isolation: isolate;
+  height: 100%;
 }
 
 .calendar-surface {
