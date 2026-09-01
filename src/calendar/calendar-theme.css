@@ -345,6 +345,58 @@
   outline-offset: 1px;
 }
 
+/* ── Agent mutation feedback ────────────────────────────────────── */
+
+/*
+ * Two independent layers:
+ *   A. spatial continuity, driven by Web Animations in `event-motion.ts`
+ *      (skipped when off-screen, multi-segment, under load, or reduced-motion)
+ *   B. this emphasis treatment, which always runs and carries the meaning
+ *
+ * Layer A reads its easing from the motion tokens in `globals.css`, so the two
+ * layers stay in the same language without duplicating curves in JavaScript.
+ */
+
+/*
+ * A quiet ring in the event's own ink — no glow, no new hue, no persistence.
+ *
+ * The ring lives on a pseudo-element and only its `opacity` animates. Animating
+ * the `box-shadow` colour directly looks equivalent but is not: Chrome cannot
+ * interpolate `color-mix(… currentColor …)` against `transparent` and falls
+ * back to discrete steps, so the ring snapped between full and nothing instead
+ * of fading. Opacity also keeps the whole treatment on the compositor.
+ *
+ * Each beat is a sharp attack and a long decay rather than a symmetric fade, so
+ * it reads like a blink at the edge of vision. Only the ring pulses — pulsing
+ * the event's own fill or opacity would make the label strobe.
+ */
+@keyframes pt-event-emphasis {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+.calendar-frame [data-pt-mutation] {
+  /* Anchors the ring; month-view events are otherwise statically positioned.
+     No offsets, so nothing in FullCalendar's layout moves. */
+  position: relative;
+}
+
+.calendar-frame [data-pt-mutation]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, currentColor 50%, transparent);
+  animation: pt-event-emphasis var(--pt-emphasis-pulse) var(--pt-ease-out)
+    var(--pt-emphasis-pulses) both;
+}
+
 /* ── Truncation tooltip (Base UI) ───────────────────────────────── */
 
 .pt-event-tooltip__positioner {
@@ -398,6 +450,30 @@
   .calendar-frame [style*="--fc-event-color"],
   .pt-event-tooltip {
     transition: none;
+  }
+
+  /*
+   * The mutation ring is deliberately kept: reduced motion means less movement,
+   * not less feedback. It animates box-shadow only, never transform or
+   * position. The spatial layer opts out in `event-motion.ts` instead of being
+   * neutralized here, so no animation is ever created in the first place.
+   *
+   * The repeat is what goes, not the ring. A pulse that keeps returning is a
+   * demand for attention, and that is the part a reduced-motion preference is
+   * asking to be spared; one hold and fade says the same thing once.
+   */
+  .calendar-frame [data-pt-mutation]::after {
+    animation: pt-event-emphasis-static var(--pt-emphasis-fade)
+      var(--pt-ease-out) var(--pt-emphasis-hold) both;
+  }
+}
+
+@keyframes pt-event-emphasis-static {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

@@ -12,12 +12,10 @@ import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import pulseTheme from "@fullcalendar/react/themes/pulse";
-import {
-  useFullCalendarWebMCP,
-  type CalendarEvent,
-} from "@protocoltooling/fullcalendar";
+import { useFullCalendarWebMCP } from "@protocoltooling/fullcalendar";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { CalendarAnnouncer } from "./CalendarAnnouncer";
 import {
   CalendarEventContent,
 } from "./CalendarEventContent";
@@ -28,6 +26,7 @@ import {
 } from "./calendar-views";
 import { persistHumanMove } from "./human-move";
 import { LocalCalendarEventRepository } from "./local-calendar-repository";
+import { useCalendarMutations } from "./use-calendar-mutations";
 import { paletteForEventId } from "./event-palette";
 import { shouldResetFromSearch, stripResetParam } from "./reset";
 import {
@@ -83,6 +82,7 @@ type CalendarAppProps = {
 
 export function CalendarApp({ repository: injectedRepository }: CalendarAppProps = {}) {
   const calendarRef = useRef<CalendarRef>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const isClient = useIsClient();
   const [repository] = useState(
     () =>
@@ -92,16 +92,20 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
         storageKey: DEMO_STORAGE_KEY,
       }),
   );
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const {
+    events,
+    reload: reloadEvents,
+    agentRepository,
+    humanRepository,
+    onEventDidMount,
+    onViewChanged,
+    announcement,
+  } = useCalendarMutations({ repository, frameRef });
   const [title, setTitle] = useState("September 2026");
   const [viewType, setViewType] = useState<CalendarViewType>("dayGridMonth");
   const [prevDisabled, setPrevDisabled] = useState(false);
   const [nextDisabled, setNextDisabled] = useState(false);
   const [todayDisabled, setTodayDisabled] = useState(false);
-
-  const reloadEvents = useCallback(async () => {
-    setEvents(await repository.list());
-  }, [repository]);
 
   const syncFromCalendar = useCallback((api: CalendarApi) => {
     const nextView = api.view.type;
@@ -118,8 +122,9 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
   const onDatesSet = useCallback(
     (info: DatesSetInfo) => {
       syncFromCalendar(info.view.calendar);
+      onViewChanged();
     },
-    [syncFromCalendar],
+    [onViewChanged, syncFromCalendar],
   );
 
   const getApi = useCallback(() => calendarRef.current?.getApi() ?? null, []);
@@ -156,21 +161,20 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
     }
 
     // Initial hydrate from the authoritative repository (localStorage).
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- async store read on client mount
     void reloadEvents();
   }, [isClient, repository, reloadEvents]);
 
   useFullCalendarWebMCP({
     calendarRef,
-    events: repository,
+    events: agentRepository,
     onEventsChanged: reloadEvents,
   });
 
   const onHumanMove = useCallback(
     async (info: EventDropInfo | EventResizeDoneInfo) => {
-      await persistHumanMove(repository, info, reloadEvents);
+      await persistHumanMove(humanRepository, info, reloadEvents);
     },
-    [repository, reloadEvents],
+    [humanRepository, reloadEvents],
   );
 
   return (
@@ -187,7 +191,8 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
           onToday={onToday}
           onViewChange={onViewChange}
         />
-        <div className="calendar-frame">
+        <CalendarAnnouncer message={announcement} />
+        <div className="calendar-frame" ref={frameRef}>
           {isClient ? (
             <FullCalendar
               ref={calendarRef}
@@ -234,6 +239,7 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
                 };
               })}
               eventContent={CalendarEventContent}
+              eventDidMount={onEventDidMount}
               height="100%"
               expandRows={false}
               slotMinHeight={36}
