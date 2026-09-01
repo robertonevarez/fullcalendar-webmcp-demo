@@ -219,6 +219,9 @@ export function CalendarApp({ repository: injectedRepository }: CalendarAppProps
               })}
               eventContent={CalendarEventContent}
               height="100%"
+              expandRows={false}
+              slotMinHeight={28}
+              eventMinHeight={16}
               datesSet={onDatesSet}
               dayCellDidMount={(info) => {
                 info.el.dataset.ptDay = info.isOther ? "other" : "current";
