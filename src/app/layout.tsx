@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 /**
- * Same InterVariable source as protocoltooling (blume.config.ts fonts/inter).
+ * Same InterVariable source as the FullCalendar WebMCP docs site.
  * next/font/google Inter does not include cv11 / ss0x alternates, so CSS
- * feature settings alone cannot match Protocol Tooling’s glyph set.
+ * feature settings alone cannot match the local font files' glyph set.
  */
 const inter = localFont({
   src: [
