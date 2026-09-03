@@ -5,8 +5,9 @@ import { fileURLToPath } from "url";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  // Served at protocoltooling.com/demo via the main site's external rewrite.
-  basePath: "/demo",
+  // Served at protocoltooling.com/integrations/fullcalendar/demo via the main
+  // site's external rewrite.
+  basePath: "/integrations/fullcalendar/demo",
   // Keep Turbopack scoped to this repo (avoids picking up a parent lockfile).
   turbopack: {
     root: projectRoot,
