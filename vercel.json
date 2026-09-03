@@ -3,7 +3,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/demo",
+      "destination": "/integrations/fullcalendar/demo",
       "permanent": false
     }
   ]
